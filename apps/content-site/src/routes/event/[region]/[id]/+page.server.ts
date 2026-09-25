@@ -14,6 +14,17 @@ import {
 } from "$lib/server/event-detail";
 import type { EventRelatedData } from "$lib/domain/event-detail";
 import { fetchUnitProfiles, toUnitProfileMap } from "$lib/server/unit-profiles";
+import { getEventBannerAssetURL } from "$lib/assets/index";
+import { createPageTitle } from "$lib/page-title";
+import {
+  buildCanonicalUrl,
+  buildDiscordEmbedSeo,
+  buildEventMetaLine,
+  isDiscordCrawler,
+  resolveAbsoluteUrl,
+  resolveSeoWithBudget,
+  type DiscordEmbedSeo
+} from "$lib/seo/discord-embed";
 import type { PageServerLoad } from "./$types";
 
 type EventPayload = {
@@ -238,7 +249,7 @@ const fetchIsCurrentEvent = async ({
   return (await aggregatePromise).isCurrentEvent;
 };
 
-export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
+export const load: PageServerLoad = async ({ params, url, request, cookies, fetch }) => {
   const eventId = params.id?.trim() ?? "";
   const uiLocale = normalizeUiLocale(cookies.get(UI_LOCALE_COOKIE_NAME));
   const [
@@ -265,29 +276,87 @@ export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
         rawPayloadJson: null
       } satisfies EventAggregateLookup);
 
+  // Server-render the link preview for Discord's crawler (no JS execution);
+  // browsers keep the streaming path. The budget guard keeps slow upstream
+  // responses (the event aggregate can take 20s+) from blowing Discord's
+  // 10s unfurl window.
+  const crawler = isDiscordCrawler(request?.headers.get("user-agent"));
+  let seo: DiscordEmbedSeo | null = null;
+  if (crawler && eventId) {
+    seo = await resolveSeoWithBudget(async () => {
+      const aggregate = await aggregatePromise;
+      if (!aggregate.event) {
+        return null;
+      }
+      const event = aggregate.event;
+      const resolveImageUrl = (): string => {
+        try {
+          return event.assetBundleName
+            ? resolveAbsoluteUrl(getEventBannerAssetURL(event.assetBundleName, region), url?.origin)
+            : "";
+        } catch {
+          return "";
+        }
+      };
+      return buildDiscordEmbedSeo({
+        pageTitle: createPageTitle(event.title, "Events"),
+        title: event.title,
+        metaLine: buildEventMetaLine({
+          title: event.title,
+          unitName: event.unitName ?? event.unit,
+          eventType: event.eventType
+        }),
+        description: aggregate.relatedData?.musics?.[0]?.title
+          ? `Featuring ${aggregate.relatedData.musics[0].title}`
+          : null,
+        imageUrl: resolveImageUrl(),
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false)
+      });
+    });
+  }
+
+  // On a crawler SEO miss the upstream aggregate is too slow for Discord's
+  // fetch window, so resolve the streamed payloads immediately instead of
+  // holding the response open for 20s+. Crawlers only read `<head>`; the
+  // in-flight aggregate still serves browsers via their own requests.
+  const crawlerMiss = crawler && !seo;
+
   return {
     eventId,
     region,
     regionLabel: regionLabels[region],
+    seo,
     eventUnavailableInCurrentRegionMessage,
     failedToLoadEventDataMessage,
-    availableRegions: eventId
-      ? fetchAvailableRegions({
-          baseUrl,
-          eventId,
-          region,
-          aggregatePromise
+    availableRegions:
+      crawlerMiss || !eventId
+        ? Promise.resolve([region] satisfies SupportedRegion[])
+        : fetchAvailableRegions({
+            baseUrl,
+            eventId,
+            region,
+            aggregatePromise
+          }),
+    eventPayload: crawlerMiss
+      ? Promise.resolve({
+          event: null,
+          relatedData: null,
+          debugEventJson: null,
+          error: failedToLoadEventDataMessage
+        } satisfies EventPayload)
+      : fetchEventPayload({
+          aggregatePromise,
+          invalidEventIdMessage: eventId ? null : invalidEventIdMessage,
+          failedToLoadEventDataMessage
+        }),
+    unitProfiles: crawlerMiss
+      ? Promise.resolve({})
+      : fetchUnitProfiles(baseUrl, region).then(toUnitProfileMap),
+    isCurrentEvent: crawlerMiss
+      ? Promise.resolve(false)
+      : fetchIsCurrentEvent({
+          aggregatePromise,
+          invalidEventIdMessage: eventId ? null : invalidEventIdMessage
         })
-      : Promise.resolve([region] satisfies SupportedRegion[]),
-    eventPayload: fetchEventPayload({
-      aggregatePromise,
-      invalidEventIdMessage: eventId ? null : invalidEventIdMessage,
-      failedToLoadEventDataMessage
-    }),
-    unitProfiles: fetchUnitProfiles(baseUrl, region).then(toUnitProfileMap),
-    isCurrentEvent: fetchIsCurrentEvent({
-      aggregatePromise,
-      invalidEventIdMessage: eventId ? null : invalidEventIdMessage
-    })
   };
 };

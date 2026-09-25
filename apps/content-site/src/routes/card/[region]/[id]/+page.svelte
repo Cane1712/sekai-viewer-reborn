@@ -22,7 +22,7 @@
   import { createI18nTranslator, resolveStreamingMessages } from "$lib/i18n/runtime";
   import type { SupportedRegion } from "$lib/domain/regions";
   import { createPageTitle } from "$lib/page-title";
-import type { PageData } from "./$types";
+  import type { PageData } from "./$types";
 
   let { data }: { data: PageData } = $props();
   const getInitialMessages = (): Record<string, string> =>
@@ -338,17 +338,35 @@ import type { PageData } from "./$types";
 {/snippet}
 
 <svelte:head>
-  {#await data.cardPayload}
-    <title>{createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}</title>
-  {:then payload}
-    <title>
-      {payload.card
-        ? createPageTitle(payload.card.title, currentTranslate("navigation.cards"))
-        : createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}
-    </title>
-  {:catch}
-    <title>{createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}</title>
-  {/await}
+  {#if data.seo}
+    <title>{data.seo.pageTitle}</title>
+    <meta property="og:site_name" content="Sekai Viewer" />
+    <meta property="og:title" content={data.seo.title} />
+    {#if data.seo.description}
+      <meta property="og:description" content={data.seo.description} />
+    {/if}
+    {#if data.seo.imageUrl}
+      <meta property="og:image" content={data.seo.imageUrl} />
+    {/if}
+    <meta property="og:url" content={data.seo.canonicalUrl} />
+    <meta property="og:type" content="article" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Trusted server-built JSON (angle brackets escaped); renders Discord's component embed. -->
+    <!-- eslint-disable-next-line svelte/no-at-html-tags -- input is server-built JSON, not user HTML -->
+    {@html data.seo.inlineScriptHtml}
+  {:else}
+    {#await data.cardPayload}
+      <title>{createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}</title>
+    {:then payload}
+      <title>
+        {payload.card
+          ? createPageTitle(payload.card.title, currentTranslate("navigation.cards"))
+          : createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}
+      </title>
+    {:catch}
+      <title>{createPageTitle(`${pageTitlePrefix} ${data.cardId}`)}</title>
+    {/await}
+  {/if}
 </svelte:head>
 
 <section use:swipeRegion class="content-page-shell gap-4 px-2">
@@ -473,49 +491,49 @@ import type { PageData } from "./$types";
             </div>
 
             <div class="order-3">
-            {#await data.episodes then episodes}
-              <CardDetailEpisodesCard
-                {episodes}
-                title={cardEpisodesTitle}
-                {releaseConditionLabel}
-                {costsLabel}
-                {rewardsLabel}
-                {noEpisodesLabel}
-              />
-            {:catch}
-              <article class="card content-card-shell shadow-sm">
-                <div class="card-body gap-4 p-3 sm:p-5">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
-                    {cardEpisodesTitle}
-                  </p>
-                  <p class="text-sm opacity-60">{noEpisodesLabel}</p>
-                </div>
-              </article>
-            {/await}
-          </div>
+              {#await data.episodes then episodes}
+                <CardDetailEpisodesCard
+                  {episodes}
+                  title={cardEpisodesTitle}
+                  {releaseConditionLabel}
+                  {costsLabel}
+                  {rewardsLabel}
+                  {noEpisodesLabel}
+                />
+              {:catch}
+                <article class="card content-card-shell shadow-sm">
+                  <div class="card-body gap-4 p-3 sm:p-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
+                      {cardEpisodesTitle}
+                    </p>
+                    <p class="text-sm opacity-60">{noEpisodesLabel}</p>
+                  </div>
+                </article>
+              {/await}
+            </div>
 
             <div class="order-4">
-            {#await data.relatedEvents then relatedEvents}
-              <CardDetailEventsCard
-                translate={currentTranslate}
-                events={relatedEvents}
-                region={data.region}
-                uiLocale={displayLocale}
-                title={cardRelatedEventsTitle}
-                emptyLabel={noRelatedEventsLabel}
-                bonusLabel={relatedEventBonusLabel}
-                storyLabel={relatedEventStoryLabel}
-              />
-            {:catch}
-              <article class="card content-card-shell shadow-sm">
-                <div class="card-body gap-4 p-3 sm:p-5">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
-                    {cardRelatedEventsTitle}
-                  </p>
-                  <p class="text-sm opacity-60">{noRelatedEventsLabel}</p>
-                </div>
-              </article>
-            {/await}
+              {#await data.relatedEvents then relatedEvents}
+                <CardDetailEventsCard
+                  translate={currentTranslate}
+                  events={relatedEvents}
+                  region={data.region}
+                  uiLocale={displayLocale}
+                  title={cardRelatedEventsTitle}
+                  emptyLabel={noRelatedEventsLabel}
+                  bonusLabel={relatedEventBonusLabel}
+                  storyLabel={relatedEventStoryLabel}
+                />
+              {:catch}
+                <article class="card content-card-shell shadow-sm">
+                  <div class="card-body gap-4 p-3 sm:p-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
+                      {cardRelatedEventsTitle}
+                    </p>
+                    <p class="text-sm opacity-60">{noRelatedEventsLabel}</p>
+                  </div>
+                </article>
+              {/await}
             </div>
           </div>
 
@@ -553,25 +571,25 @@ import type { PageData } from "./$types";
             </div>
 
             <div class="order-5">
-            {#await data.gachas then gachas}
-              <CardDetailGachaCard
-                {gachas}
-                region={data.region}
-                uiLocale={displayLocale}
-                title={cardGachaBannersTitle}
-                emptyLabel={noRelatedGachaLabel}
-                showAllLabel={showAllGachaLabel}
-              />
-            {:catch}
-              <article class="card content-card-shell shadow-sm">
-                <div class="card-body gap-4 p-3 sm:p-5">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
-                    {cardGachaBannersTitle}
-                  </p>
-                  <p class="text-sm opacity-60">{noRelatedGachaLabel}</p>
-                </div>
-              </article>
-            {/await}
+              {#await data.gachas then gachas}
+                <CardDetailGachaCard
+                  {gachas}
+                  region={data.region}
+                  uiLocale={displayLocale}
+                  title={cardGachaBannersTitle}
+                  emptyLabel={noRelatedGachaLabel}
+                  showAllLabel={showAllGachaLabel}
+                />
+              {:catch}
+                <article class="card content-card-shell shadow-sm">
+                  <div class="card-body gap-4 p-3 sm:p-5">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] opacity-60">
+                      {cardGachaBannersTitle}
+                    </p>
+                    <p class="text-sm opacity-60">{noRelatedGachaLabel}</p>
+                  </div>
+                </article>
+              {/await}
             </div>
           </div>
         </div>

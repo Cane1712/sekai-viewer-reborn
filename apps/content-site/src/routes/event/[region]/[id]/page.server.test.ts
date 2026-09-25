@@ -23,6 +23,10 @@ const { fetchUnitProfiles, toUnitProfileMap } = vi.hoisted(() => ({
 }));
 vi.mock("$lib/server/unit-profiles", () => ({ fetchUnitProfiles, toUnitProfileMap }));
 
+vi.mock("$env/dynamic/public", () => ({
+  env: { PUBLIC_REMOTE_ASSET_BASE_URL: "https://assets.example.test" }
+}));
+
 import { load } from "./+page.server";
 
 const messages = {
@@ -113,5 +117,45 @@ describe("event detail page load", () => {
       debugEventJson: null,
       error: null
     });
+  });
+
+  it("server-renders the embed for Discord's crawler", async () => {
+    getEventsByRegionByIdDetail.mockResolvedValue({
+      data: {
+        event: {
+          id: "1",
+          name: "Event title",
+          assetbundleName: "event-1",
+          unitName: "Leo/need",
+          eventType: "marathon"
+        }
+      }
+    });
+
+    const pageUrl = new URL("https://viewer.example/event/jp/1");
+    const result = (await load({
+      params: { region: "jp", id: "1" },
+      url: pageUrl,
+      request: new Request(pageUrl, {
+        headers: {
+          "user-agent": "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)"
+        }
+      }),
+      cookies: { get: () => undefined },
+      fetch: vi.fn()
+    } as unknown as Parameters<typeof load>[0])) as {
+      seo: {
+        title: string;
+        imageUrl: string;
+        canonicalUrl: string;
+        inlineScriptHtml: string;
+      } | null;
+    };
+
+    expect(result.seo).not.toBe(null);
+    expect(result.seo?.title).toBe("Event title");
+    expect(result.seo?.canonicalUrl).toBe("https://viewer.example/event/jp/1");
+    expect(result.seo?.imageUrl).toContain("home/banner");
+    expect(result.seo?.inlineScriptHtml).toContain('id="discord:component-embed"');
   });
 });

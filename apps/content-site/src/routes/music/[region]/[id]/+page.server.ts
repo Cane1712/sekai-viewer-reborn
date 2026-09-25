@@ -9,6 +9,18 @@ import { normalizeRegion, normalizeUiLocale, UI_LOCALE_COOKIE_NAME } from "$lib/
 import { getMasterApiBaseUrl } from "$lib/server/config";
 import { parseMusicDetail, type MusicDetail } from "$lib/server/music-detail";
 import { fetchUnitProfiles, toUnitProfileMap } from "$lib/server/unit-profiles";
+import { getMusicJacketAssetURL } from "$lib/assets/index";
+import { createPageTitle } from "$lib/page-title";
+import {
+  buildCanonicalUrl,
+  buildDiscordEmbedSeo,
+  buildMusicDescription,
+  buildMusicMetaLine,
+  isDiscordCrawler,
+  resolveAbsoluteUrl,
+  resolveSeoWithBudget,
+  type DiscordEmbedSeo
+} from "$lib/seo/discord-embed";
 import type { PageServerLoad } from "./$types";
 
 type RegionMusicLookup = {
@@ -185,7 +197,7 @@ const fetchMusicPayload = async ({
   }
 };
 
-export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
+export const load: PageServerLoad = async ({ params, url, request, cookies, fetch }) => {
   const musicId = params.id?.trim() ?? "";
   const uiLocale = normalizeUiLocale(cookies.get(UI_LOCALE_COOKIE_NAME));
   const [
@@ -212,10 +224,54 @@ export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
         rawPayloadJson: null
       } satisfies RegionMusicLookup);
 
+  // Server-render the link preview for Discord's crawler (no JS execution);
+  // browsers keep the streaming path. The budget guard keeps slow upstream
+  // responses from blowing Discord's 10s unfurl window.
+  let seo: DiscordEmbedSeo | null = null;
+  if (isDiscordCrawler(request?.headers.get("user-agent")) && musicId) {
+    seo = await resolveSeoWithBudget(async () => {
+      const lookup = await currentLookupPromise;
+      if (!lookup.music) {
+        return null;
+      }
+      const music = lookup.music;
+      const resolveImageUrl = (): string => {
+        try {
+          return music.assetBundleName
+            ? resolveAbsoluteUrl(getMusicJacketAssetURL(music.assetBundleName, region), url?.origin)
+            : "";
+        } catch {
+          return "";
+        }
+      };
+      return buildDiscordEmbedSeo({
+        pageTitle: createPageTitle(music.title, "Music"),
+        title: music.title,
+        metaLine: buildMusicMetaLine({
+          title: music.title,
+          composer: music.composer,
+          arranger: music.arranger,
+          lyricist: music.lyricist,
+          creatorName: music.creatorArtist?.name
+        }),
+        description: buildMusicDescription({
+          title: music.title,
+          composer: music.composer,
+          arranger: music.arranger,
+          lyricist: music.lyricist,
+          creatorName: music.creatorArtist?.name
+        }),
+        imageUrl: resolveImageUrl(),
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false)
+      });
+    });
+  }
+
   return {
     musicId,
     region,
     regionLabel: regionLabels[region],
+    seo,
     musicUnavailableInCurrentRegionMessage,
     failedToLoadMusicDataMessage,
     availableRegions: musicId

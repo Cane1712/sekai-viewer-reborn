@@ -22,6 +22,19 @@ import {
 } from "$lib/server/card-detail";
 import { getMasterApiBaseUrl } from "$lib/server/config";
 import { fetchUnitProfiles, toUnitProfileMap } from "$lib/server/unit-profiles";
+import { getCardFullAssetURL } from "$lib/assets/index";
+import { createPageTitle } from "$lib/page-title";
+import {
+  buildCardDescription,
+  buildCardMetaLine,
+  buildCanonicalUrl,
+  buildDiscordEmbedSeo,
+  isDiscordCrawler,
+  parseTrainedParam,
+  resolveAbsoluteUrl,
+  resolveSeoWithBudget,
+  type DiscordEmbedSeo
+} from "$lib/seo/discord-embed";
 import type { PageServerLoad } from "./$types";
 
 type CardPayload = {
@@ -200,7 +213,7 @@ const fetchCardPayload = async ({
   }
 };
 
-export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
+export const load: PageServerLoad = async ({ params, url, request, cookies, fetch }) => {
   const cardId = params.id?.trim() ?? "";
   const uiLocale = normalizeUiLocale(cookies.get(UI_LOCALE_COOKIE_NAME));
   const [invalidCardIdMessage, cardUnavailableInCurrentRegionMessage, failedToLoadCardDataMessage] =
@@ -225,10 +238,65 @@ export const load: PageServerLoad = async ({ params, cookies, fetch }) => {
         gachas: []
       } satisfies CardDetailFetchResult);
 
+  // Discord's crawler never executes JavaScript, so streaming `{#await}` titles
+  // are invisible to it. Resolve the SEO bundle server-side for crawlers only;
+  // browsers keep the fast streaming path. The budget guard keeps slow
+  // upstream responses from blowing Discord's 10s unfurl window.
+  const trained = parseTrainedParam(url?.searchParams.get("trained"));
+  let seo: DiscordEmbedSeo | null = null;
+  if (isDiscordCrawler(request?.headers.get("user-agent")) && cardId && !invalidMessage) {
+    seo = await resolveSeoWithBudget(async () => {
+      const detail = await detailPromise;
+      if (!detail.card) {
+        return null;
+      }
+      const card = detail.card;
+      // Relative asset bases (dev `/storage` proxy) resolve against the
+      // page origin so Discord can fetch them.
+      const resolveImageUrl = (): string => {
+        try {
+          return card.assetBundleName
+            ? resolveAbsoluteUrl(
+                getCardFullAssetURL(card.assetBundleName, trained, region),
+                url?.origin
+              )
+            : "";
+        } catch {
+          return "";
+        }
+      };
+      return buildDiscordEmbedSeo({
+        pageTitle: createPageTitle(card.title, "Cards"),
+        title: card.title,
+        metaLine: buildCardMetaLine(
+          {
+            title: card.title,
+            attr: card.attr,
+            rarityType: card.rarityType,
+            characterFirstName: card.character?.firstName,
+            characterGivenName: card.character?.givenName,
+            flavorText: card.flavorText
+          },
+          trained
+        ),
+        description: buildCardDescription({
+          title: card.title,
+          attr: card.attr,
+          rarityType: card.rarityType,
+          flavorText: card.flavorText
+        }),
+        imageUrl: resolveImageUrl(),
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, trained)
+      });
+    });
+  }
+
   return {
     cardId,
     region,
     regionLabel: regionLabels[region],
+    trained,
+    seo,
     cardUnavailableInCurrentRegionMessage,
     failedToLoadCardDataMessage,
     availableRegions: cardId
