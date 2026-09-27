@@ -13,12 +13,12 @@ const messages: I18nMessages = {
   "latestData.loadFailed": "Failed to load latest data.",
   "latestData.noData": "No data available.",
   "latestData.title": "Latest Data",
-  "latestData.viewAll": "View All",
+  "latestData.viewAll": "View all",
+  "latestData.viewAllSection": "View all {section}",
   "homeNews.error": "Failed to load news.",
   "homeNews.empty": "No news available.",
   "homeNews.loading": "Loading news...",
   "homeNews.title": "News",
-  "homeNews.viewAll": "View All",
   noCurrentEventData: "No current event data.",
   "settings.gameContentRegion": "Preferred Content Region",
   "settings.gameContentRegionDescription": "Select a region."
@@ -63,6 +63,33 @@ const flushEffects = async (): Promise<void> => {
   await Promise.resolve();
   await tick();
 };
+
+describe("homepage section links", () => {
+  it("uses the shared View all control, named after each section", async () => {
+    // Any latest item shows the per-section headers instead of the empty state.
+    const latestData = {
+      ...createRegionData("jp").latestData,
+      musics: [{ id: "1", title: "Song", assetBundleName: null, composer: null, publishedAt: null }]
+    };
+    render(HomePage, {
+      data: { ...createPageData(), initialLatestData: Promise.resolve(latestData) } as PageData
+    });
+
+    const hrefs = {
+      "View all Events": "/events/jp",
+      "View all Cards": "/cards/jp",
+      "View all Songs": "/musics/jp",
+      "View all Gachas": "/gachas/jp",
+      "View all News": "/news/jp"
+    };
+    for (const [name, href] of Object.entries(hrefs)) {
+      const link = await screen.findByRole("link", { name });
+      expect(link.getAttribute("href")).toBe(href);
+      expect(link.textContent?.trim()).toBe("View all");
+      expect(link.className).toContain("text-primary");
+    }
+  });
+});
 
 describe("homepage region data loading", () => {
   beforeEach(() => {
