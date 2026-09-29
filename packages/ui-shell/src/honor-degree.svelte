@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { buildHonorDegreeLayout } from "./honor-degree";
+  import {
+    areHonorDegreeImagesSettled,
+    buildHonorDegreeLayout,
+    getHonorDegreeImageHrefs,
+    preloadHonorDegreeImages
+  } from "./honor-degree";
   import type { HonorDegreeProps, HonorDegreeSlicedImage } from "./honor-degree.types";
 
   const componentId = $props.id();
@@ -16,6 +21,26 @@
 
   const layout = $derived(buildHonorDegreeLayout(honor, resolveAsset, slot, size));
   const accessibleLabel = $derived(label.trim() || "Title");
+  const imageHrefs = $derived(getHonorDegreeImageHrefs(layout));
+  const imageKey = $derived(imageHrefs.join("\n"));
+  // The image set that finished loading. Until it matches, a placeholder stands in and the
+  // layers stay invisible, so they appear together instead of one by one.
+  let loadedImageKey = $state<string | null>(null);
+  const loading = $derived(
+    imageHrefs.length > 0 && loadedImageKey !== imageKey && !areHonorDegreeImagesSettled(imageHrefs)
+  );
+  $effect(() => {
+    const key = imageKey;
+    const hrefs = imageHrefs;
+    if (hrefs.length === 0 || areHonorDegreeImagesSettled(hrefs)) return;
+    let current = true;
+    void preloadHonorDegreeImages(hrefs).then(() => {
+      if (current) loadedImageKey = key;
+    });
+    return () => {
+      current = false;
+    };
+  });
   const maskId = (name: string): string => `${componentId}-${name}`;
   const rotation = (image: HonorDegreeSlicedImage): string | undefined => {
     if (!image.rotate) return undefined;
@@ -79,7 +104,24 @@
 >
   {#if !decorative}<title>{title?.trim() || accessibleLabel}</title>{/if}
   {#if layout.layers.length > 0 || layout.bonds}
-    <g aria-hidden="true">
+    {#if loading}
+      <rect
+        data-honor-degree-placeholder
+        x={0}
+        y={0}
+        width={layout.width}
+        height={layout.height}
+        rx={layout.height / 2}
+        class="animate-pulse fill-(--archive-surface-sunken) motion-reduce:animate-none in-data-low-motion:animate-none"
+        aria-hidden="true"
+      />
+    {/if}
+    <g
+      aria-hidden="true"
+      class="transition-opacity duration-280 ease-out motion-reduce:transition-none in-data-low-motion:transition-none {loading
+        ? 'opacity-0'
+        : 'opacity-100'}"
+    >
       {#if layout.bonds}
         {@const bonds = layout.bonds}
         <defs>

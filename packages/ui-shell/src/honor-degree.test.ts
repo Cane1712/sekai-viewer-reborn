@@ -1,5 +1,5 @@
-import { render } from "@testing-library/svelte";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render } from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HonorDegree from "./honor-degree.svelte";
 import {
   bondsHonorLocalAssetResources,
@@ -747,5 +747,100 @@ describe("HonorDegree", () => {
     expect(getByRole("img", { name: "Title" }).style.width).toBe("126px");
     expect(getByRole("img").style.height).toBe("56px");
     expect(container.querySelector("text")?.textContent).toBe("Title");
+  });
+});
+
+describe("HonorDegree loading placeholder", () => {
+  // Settled images are remembered for the page, so each test uses its own asset paths.
+  const resolverFor =
+    (prefix: string): HonorDegreeAssetResolver =>
+    (bundle, resource) =>
+      `/${prefix}/${bundle}/${resource}`;
+  let loads: { src: string; resolve: () => void; reject: (error: Error) => void }[] = [];
+  // Settles through onload/onerror, as the browser does, once the test resolves or rejects it.
+  class FakeImage {
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    set src(value: string) {
+      loads.push({
+        src: value,
+        resolve: () => this.onload?.(),
+        reject: () => this.onerror?.()
+      });
+    }
+  }
+
+  beforeEach(() => {
+    loads = [];
+    vi.stubGlobal("Image", FakeImage);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const placeholder = (container: HTMLElement) =>
+    container.querySelector("[data-honor-degree-placeholder]");
+  const layers = (container: HTMLElement) => container.querySelector('svg > g[aria-hidden="true"]');
+
+  it("shows a placeholder and hides the layers until every image has loaded", async () => {
+    const { container } = render(HonorDegree, {
+      honor: normal,
+      resolveAsset: resolverFor("loading"),
+      label: "Achievement"
+    });
+
+    expect(placeholder(container)?.getAttribute("rx")).toBe("40");
+    expect(layers(container)?.classList).toContain("opacity-0");
+    const hrefs = new Set(
+      [...container.querySelectorAll("image")].map((image) => image.getAttribute("href"))
+    );
+    expect(new Set(loads.map((load) => load.src))).toEqual(hrefs);
+
+    for (const load of loads.slice(0, -1)) load.resolve();
+    await Promise.resolve();
+    expect(placeholder(container)).not.toBeNull();
+
+    loads.at(-1)?.resolve();
+    await vi.waitFor(() => expect(placeholder(container)).toBeNull());
+    expect(layers(container)?.classList).toContain("opacity-100");
+  });
+
+  it("ends the placeholder when an image fails", async () => {
+    const { container } = render(HonorDegree, {
+      honor: normal,
+      resolveAsset: resolverFor("failing"),
+      label: "Achievement"
+    });
+
+    loads[0]?.reject(new Error("broken"));
+    for (const load of loads.slice(1)) load.resolve();
+
+    await vi.waitFor(() => expect(placeholder(container)).toBeNull());
+    expect(layers(container)?.classList).toContain("opacity-100");
+  });
+
+  it("draws a title whose images already loaded without a placeholder", async () => {
+    const props = { honor: normal, resolveAsset: resolverFor("cached"), label: "Achievement" };
+    const first = render(HonorDegree, props);
+    for (const load of loads) load.resolve();
+    await vi.waitFor(() => expect(placeholder(first.container)).toBeNull());
+    cleanup();
+    loads = [];
+
+    const { container } = render(HonorDegree, props);
+
+    expect(placeholder(container)).toBeNull();
+    expect(layers(container)?.classList).toContain("opacity-100");
+    expect(loads).toHaveLength(0);
+  });
+
+  it("shows no placeholder for a title drawn as text", () => {
+    const { container } = render(HonorDegree, {
+      honor: { kind: "empty" },
+      resolveAsset: resolverFor("empty")
+    });
+
+    expect(placeholder(container)).toBeNull();
+    expect(loads).toHaveLength(0);
   });
 });

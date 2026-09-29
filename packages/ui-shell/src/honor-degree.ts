@@ -607,3 +607,50 @@ export function buildHonorDegreeLayout(
     scale: Object.hasOwn(honorDegreeScales, size) ? honorDegreeScales[size] : 1
   };
 }
+
+/** Every image a layout draws, once each: the Bonds masks, pattern and characters, then the layers. */
+export function getHonorDegreeImageHrefs(layout: HonorDegreeLayout): string[] {
+  const hrefs = new Set<string>();
+  if (layout.bonds) {
+    for (const background of layout.bonds.backgrounds) hrefs.add(background.image.href);
+    if (layout.bonds.pattern) hrefs.add(layout.bonds.pattern);
+    if (layout.bonds.characterMask) hrefs.add(layout.bonds.characterMask.href);
+    for (const character of layout.bonds.characters) {
+      hrefs.add(character.href);
+      if (character.window) hrefs.add(character.window.href);
+    }
+  }
+  for (const layer of layout.layers) hrefs.add(layer.href);
+  return [...hrefs];
+}
+
+// Images that have already loaded or failed in this browser, so a title drawn again (a
+// reopened dialog, a list scrolled back) shows at once. Only the browser writes to it.
+const settledHonorDegreeImages = new Set<string>();
+
+export function areHonorDegreeImagesSettled(hrefs: readonly string[]): boolean {
+  return hrefs.every((href) => settledHonorDegreeImages.has(href));
+}
+
+function preloadHonorDegreeImage(href: string): Promise<void> {
+  if (settledHonorDegreeImages.has(href)) return Promise.resolve();
+  // Wait for load or error rather than decode(): decode() only settles once the page renders
+  // a frame, so it can hang in a background tab.
+  return new Promise<void>((resolve) => {
+    const image = new Image();
+    image.onload = image.onerror = () => {
+      // A failed image settles too: the title shows what it has, and callers handle the error.
+      settledHonorDegreeImages.add(href);
+      resolve();
+    };
+    image.src = href;
+  });
+}
+
+/**
+ * Loads a layout's images in the browser, resolving once every one has loaded or failed.
+ * The SVG's own `<image>` elements then draw them from the same cache.
+ */
+export function preloadHonorDegreeImages(hrefs: readonly string[]): Promise<void> {
+  return Promise.all(hrefs.map(preloadHonorDegreeImage)).then(() => undefined);
+}
