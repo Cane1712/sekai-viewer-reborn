@@ -4,10 +4,18 @@
   import { resolve } from "$app/paths";
   import { SvelteURLSearchParams } from "svelte/reactivity";
   import HonorCatalogue from "$lib/components/honor/HonorCatalogue.svelte";
-  import type { BondsHonorGroup, HonorGroup } from "$lib/domain/honor";
+  import type {
+    BondsHonor,
+    BondsHonorGroup,
+    BondsHonorViewData,
+    HonorGroup
+  } from "$lib/domain/honor";
+  import { formatUnitFallbackLabel } from "$lib/domain/unit-profile";
   import { regionLabels, supportedRegions } from "$lib/domain/regions";
   import {
     createHonorDegreeAssetResolver,
+    getBondsHonorPartnerUnit,
+    hasBondsHonorOutfitOption,
     toCatalogueBondsHonorDegree,
     toCatalogueHonorDegree
   } from "$lib/honor-degree";
@@ -35,6 +43,7 @@
 
   let items = $state<HonorGroup[]>([]);
   let bondsItems = $state<BondsHonorGroup[]>([]);
+  let bondsViewData = $state<BondsHonorViewData | null>(null);
   let currentPage = $state(1);
   let hasNext = $state(false);
   let isInitialLoading = $state(true);
@@ -108,17 +117,38 @@
     }))
   });
 
+  const unitLabel = (unit: string): string =>
+    bondsViewData?.unitNames[unit] ?? formatUnitFallbackLabel(unit);
+  // The pair's words (the same for every rarity) and, for a unit member with a Virtual
+  // Singer, the Virtual Singer's own outfit and the partner's unit outfit.
+  const toBondsView = (honor: BondsHonor) => {
+    const partnerUnit = getBondsHonorPartnerUnit(honor);
+    return {
+      words: honor.words.map((word) => ({
+        id: word.id,
+        name: word.name ?? word.assetBundleName ?? t("honor.unnamed"),
+        description: word.description
+      })),
+      outfit:
+        bondsViewData && partnerUnit && hasBondsHonorOutfitOption(honor)
+          ? { defaultLabel: unitLabel("piapro"), unitLabel: unitLabel(partnerUnit) }
+          : null
+    };
+  };
   // A Bonds group is one character pair; its members are the pair's rarities.
   const toBondsItem = (group: BondsHonorGroup) => ({
     key: `bonds-${group.id}`,
     name: group.name ?? group.honors[0]?.name ?? t("honor.unnamed"),
     degree: group.honors[0] ? toCatalogueBondsHonorDegree(group.honors[0]) : undefined,
     countLabel: t("honor.memberCount").replace("{count}", formatNumber(group.honors.length)),
+    bondsView: group.honors[0] ? toBondsView(group.honors[0]) : undefined,
     members: group.honors.map((honor) => ({
       key: String(honor.id),
       name: honor.name ?? t("honor.unnamed"),
       variantLabel: rarityLabel(honor.honorRarity),
       degree: toCatalogueBondsHonorDegree(honor),
+      degreeFor: (view: Parameters<typeof toCatalogueBondsHonorDegree>[1]) =>
+        toCatalogueBondsHonorDegree(honor, view, bondsViewData),
       levels: honor.levels.map((level) => ({
         label:
           level.level === null
@@ -204,6 +234,12 @@
     loadMoreError = false;
     sortOrder = data.query.sortOrder;
 
+    bondsViewData = null;
+    void Promise.resolve(data.bondsView)
+      .then((viewData) => {
+        if (requestId === listRequestId) bondsViewData = viewData;
+      })
+      .catch(() => {});
     void Promise.resolve(data.catalogue)
       .then((catalogue) => {
         if (requestId !== listRequestId) return;
@@ -272,6 +308,12 @@
   imageUnavailableLabel={t("imageUnavailable")}
   levelsLabel={t("honor.levels")}
   closeLabel={t("closeLabel")}
+  bondsViewLabels={{
+    options: t("honor.bonds.display"),
+    word: t("honor.bonds.word"),
+    outfit: t("honor.bonds.outfit"),
+    swapSides: t("honor.bonds.swapSides")
+  }}
   honorTypes={availableHonorTypes}
   selectedHonorType={data.query.honorType}
   categoryLabel={t("honor.categoryLabel")}

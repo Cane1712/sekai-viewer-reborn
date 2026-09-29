@@ -4,7 +4,15 @@ import {
   type HonorDegreeAssetResolver
 } from "@platform/ui-shell";
 import { getRemoteAssetEndpointURL } from "$lib/assets/index";
-import type { BondsHonor, Honor, HonorGroupMetadata, HonorLevel } from "$lib/domain/honor";
+import {
+  defaultBondsHonorView,
+  type BondsHonor,
+  type BondsHonorView,
+  type BondsHonorViewData,
+  type Honor,
+  type HonorGroupMetadata,
+  type HonorLevel
+} from "$lib/domain/honor";
 import type { SupportedRegion } from "$lib/domain/regions";
 
 export type CatalogueHonorDegree = { main: HonorDegreeInput; sub: HonorDegreeInput };
@@ -180,14 +188,46 @@ export function createHonorDegreeAssetResolver(region: SupportedRegion): HonorDe
 
 const twoDigits = (value: number): string => String(value).padStart(2, "0");
 
+const VIRTUAL_SINGER_UNIT = "piapro";
+
 /**
- * A Bonds honor with its pair's default word (the lowest seq) at its first level.
- * Character art is keyed by character unit; word textures carry the rarity + 1.
+ * The unit whose outfit a Virtual Singer wears in the unit view: the other side's unit
+ * when it is a unit member, as the game resolves `*_unit_virtual_singer` view types. Null
+ * when both sides are Virtual Singers, which keep their own outfit.
  */
-export function toCatalogueBondsHonorDegree(honor: BondsHonor): CatalogueHonorDegree {
+export const getBondsHonorPartnerUnit = (honor: BondsHonor): string | null =>
+  honor.units.find((unit) => unit?.unit && unit.unit !== VIRTUAL_SINGER_UNIT)?.unit ?? null;
+
+/** Whether the Virtual Singer outfit option applies: a unit member with a Virtual Singer. */
+export const hasBondsHonorOutfitOption = (honor: BondsHonor): boolean =>
+  honor.configurableUnitVirtualSinger && getBondsHonorPartnerUnit(honor) !== null;
+
+/**
+ * A Bonds honor as a player shows it: the chosen word (the pair's default word, the
+ * lowest seq, otherwise), at its first level, optionally with the sides swapped and a
+ * Virtual Singer in the partner's unit outfit. Character art is keyed by character unit;
+ * word textures carry the rarity + 1.
+ */
+export function toCatalogueBondsHonorDegree(
+  honor: BondsHonor,
+  view: BondsHonorView = defaultBondsHonorView,
+  viewData: BondsHonorViewData | null = null
+): CatalogueHonorDegree {
   const rarity = normalizeHonorDegreeRarity(honor.honorRarity);
-  const word = honor.words[0]?.assetBundleName;
+  const word = (
+    (view.wordId === null ? undefined : honor.words.find((entry) => entry.id === view.wordId)) ??
+    honor.words[0]
+  )?.assetBundleName;
   const level = honor.levels.find((entry) => (entry.level ?? 0) > 0)?.level ?? null;
+  const partnerUnit =
+    view.unitVirtualSinger && hasBondsHonorOutfitOption(honor)
+      ? getBondsHonorPartnerUnit(honor)
+      : null;
+  // A Virtual Singer in the unit view uses the character unit of their partner's unit.
+  const artUnitId = (unit: BondsHonor["units"][number]): number | undefined =>
+    partnerUnit && unit?.unit === VIRTUAL_SINGER_UNIT && unit.gameCharacterId !== null
+      ? (viewData?.characterUnitIds[`${unit.gameCharacterId}:${partnerUnit}`] ?? unit.id)
+      : unit?.id;
   const character = (unitId: number | undefined) =>
     unitId === undefined
       ? null
@@ -197,11 +237,12 @@ export function toCatalogueBondsHonorDegree(honor: BondsHonor): CatalogueHonorDe
     rarity,
     level,
     colors: [honor.units[0]?.colorCode, honor.units[1]?.colorCode],
-    characters: [character(honor.units[0]?.id), character(honor.units[1]?.id)],
+    characters: [character(artUnitId(honor.units[0])), character(artUnitId(honor.units[1]))],
     word:
       word && rarity !== null
         ? { bundlePath: "bonds_honor/word", resourceName: `${word}_${twoDigits(rarity + 1)}` }
-        : null
+        : null,
+    reverse: view.reverse
   };
   return { main: degree, sub: degree };
 }

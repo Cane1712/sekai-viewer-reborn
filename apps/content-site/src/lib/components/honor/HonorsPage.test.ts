@@ -69,6 +69,7 @@ const data = (
   region,
   query: { honorType, name: "", sortBy: "id", sortOrder: "asc" },
   catalogue: Promise.resolve(catalogue),
+  bondsView: Promise.resolve(null),
   uiLocale: "en",
   preferredRegion: region,
   globalNotices: [],

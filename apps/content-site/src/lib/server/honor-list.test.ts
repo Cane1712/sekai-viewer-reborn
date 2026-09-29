@@ -1,17 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { HonorGroup } from "$lib/domain/honor";
 
-const { getBondsHonorsByRegionList, getHonorGroupsByRegionList } = vi.hoisted(() => ({
+const {
+  getBondsHonorsByRegionList,
+  getGameCharacterUnitsByRegionList,
+  getHonorGroupsByRegionList,
+  getUnitProfilesByRegionList,
+  getVersionsByRegion
+} = vi.hoisted(() => ({
   getBondsHonorsByRegionList: vi.fn(),
-  getHonorGroupsByRegionList: vi.fn()
+  getGameCharacterUnitsByRegionList: vi.fn(),
+  getHonorGroupsByRegionList: vi.fn(),
+  getUnitProfilesByRegionList: vi.fn(),
+  getVersionsByRegion: vi.fn()
 }));
 vi.mock("@platform/sekai-master-api-sdk", () => ({
   getBondsHonorsByRegionList,
-  getHonorGroupsByRegionList
+  getGameCharacterUnitsByRegionList,
+  getHonorGroupsByRegionList,
+  getUnitProfilesByRegionList,
+  getVersionsByRegion
 }));
 
 import {
   createEmptyHonorListPage,
+  fetchBondsHonorViewData,
   fetchHonorListPage,
   parseHonorListQueryState,
   parseHonor,
@@ -187,11 +200,13 @@ describe("honor catalogue adapter", () => {
           id: groupId * 1000 + 1,
           seq: 1,
           assetbundleName: `honorname_${groupId}_default`,
-          name: "First"
+          name: "First",
+          description: "Reach bond rank 5"
         }
       ],
       characterUnit1: { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
-      characterUnit2: { id: 26, gameCharacterId: 26, unit: "piapro", colorCode: "#3366cc" }
+      characterUnit2: { id: 26, gameCharacterId: 26, unit: "piapro", colorCode: "#3366cc" },
+      ...(groupId === 10102 ? { configurableUnitVirtualSinger: true } : {})
     });
     getBondsHonorsByRegionList.mockResolvedValueOnce({
       data: {
@@ -245,6 +260,48 @@ describe("honor catalogue adapter", () => {
       "First",
       "Later"
     ]);
+    expect(page.bondsItems[0]?.honors[0]?.words.map((word) => word.description)).toEqual([
+      "Reach bond rank 5",
+      null
+    ]);
+    expect(page.bondsItems[0]?.honors[0]?.configurableUnitVirtualSinger).toBe(false);
+    expect(page.bondsItems[1]?.honors[0]?.configurableUnitVirtualSinger).toBe(true);
+  });
+
+  it("loads the character units and unit names for the Virtual Singer outfit option", async () => {
+    getGameCharacterUnitsByRegionList.mockResolvedValueOnce({
+      data: {
+        items: [
+          { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
+          { id: 27, gameCharacterId: 21, unit: "light_sound", colorCode: "#33ccbb" },
+          { id: 4, gameCharacterId: 4, unit: "light_sound", colorCode: "#bbdd22" },
+          { gameCharacterId: 5, unit: "idol" }
+        ],
+        pagination: { page: 1, page_size: 100, total: 4, total_pages: 1, has_next: false }
+      }
+    });
+    getVersionsByRegion.mockResolvedValueOnce({ data: { dataVersion: "6.8.0" } });
+    getUnitProfilesByRegionList.mockResolvedValueOnce({
+      data: {
+        items: [
+          { unit: "light_sound", unitName: "Leo/need" },
+          { unit: "piapro", unitName: "VIRTUAL SINGER" }
+        ]
+      }
+    });
+
+    await expect(fetchBondsHonorViewData("https://master-api.test", "jp")).resolves.toEqual({
+      characterUnitIds: { "21:piapro": 21, "21:light_sound": 27, "4:light_sound": 4 },
+      unitNames: { light_sound: "Leo/need", piapro: "VIRTUAL SINGER" }
+    });
+  });
+
+  it("leaves out the outfit option when the character units cannot be loaded", async () => {
+    getGameCharacterUnitsByRegionList.mockResolvedValueOnce({ error: { message: "down" } });
+    getVersionsByRegion.mockResolvedValueOnce({ data: { dataVersion: "6.8.0" } });
+    getUnitProfilesByRegionList.mockResolvedValueOnce({ data: { items: [] } });
+
+    await expect(fetchBondsHonorViewData("https://master-api.test", "kr")).resolves.toBeNull();
   });
 
   it("creates an empty page with stable pagination defaults", () => {

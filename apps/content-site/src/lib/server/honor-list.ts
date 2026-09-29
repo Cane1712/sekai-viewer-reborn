@@ -7,6 +7,7 @@ import type {
   BondsHonor,
   BondsHonorGroup,
   BondsHonorUnit,
+  BondsHonorViewData,
   BondsHonorWord,
   Honor,
   HonorGroup,
@@ -14,6 +15,9 @@ import type {
   HonorLevel
 } from "$lib/domain/honor";
 import type { CataloguePagination } from "./catalogue-data";
+import { parseCharacterUnits } from "./character-list";
+import { aggregateGameCharacterUnitsByRegion } from "./character-pages";
+import { fetchUnitProfiles, toUnitProfileMap } from "./unit-profiles";
 import {
   getArray,
   getCatalogueHasNext,
@@ -317,7 +321,8 @@ const parseBondsHonorWord = (payload: unknown): BondsHonorWord | null => {
     id,
     seq: getNumber(root.seq),
     assetBundleName: getString(root.assetbundleName ?? root.assetBundleName),
-    name: getString(root.name)
+    name: getString(root.name),
+    description: getString(root.description)
   };
 };
 
@@ -343,8 +348,33 @@ export const parseBondsHonor = (payload: unknown): BondsHonor | null => {
         return word ? [word] : [];
       })
       .sort((left, right) => (left.seq ?? 0) - (right.seq ?? 0) || left.id - right.id),
-    units: [parseBondsHonorUnit(root.characterUnit1), parseBondsHonorUnit(root.characterUnit2)]
+    units: [parseBondsHonorUnit(root.characterUnit1), parseBondsHonorUnit(root.characterUnit2)],
+    configurableUnitVirtualSinger: root.configurableUnitVirtualSinger === true
   };
+};
+
+/**
+ * Region data for the Bonds honor Virtual Singer outfit option: every game character
+ * unit ID by character and unit, and the unit names. Null when the units cannot be
+ * loaded, which leaves the option out.
+ */
+export const fetchBondsHonorViewData = async (
+  baseUrl: string,
+  region: string
+): Promise<BondsHonorViewData | null> => {
+  const [unitsResult, profiles] = await Promise.all([
+    aggregateGameCharacterUnitsByRegion(baseUrl, region, "id", "asc"),
+    fetchUnitProfiles(baseUrl, region).catch(() => [])
+  ]);
+  if (unitsResult.loadFailed) return null;
+  const characterUnitIds: Record<string, number> = {};
+  for (const unit of parseCharacterUnits(unitsResult.data)) {
+    const id = Number(unit.id);
+    if (unit.unit && Number.isSafeInteger(id) && id > 0) {
+      characterUnitIds[`${unit.gameCharacterId}:${unit.unit}`] = id;
+    }
+  }
+  return { characterUnitIds, unitNames: toUnitProfileMap(profiles) };
 };
 
 /** Groups consecutive honors of the same pair, keeping the list order. */

@@ -39,6 +39,8 @@ export type BondsHonorWord = {
   seq: number | null;
   assetBundleName: string | null;
   name: string | null;
+  /** How the word is unlocked, for example the Kizuna rank to reach. */
+  description: string | null;
 };
 
 export type BondsHonorUnit = {
@@ -57,6 +59,33 @@ export type BondsHonor = {
   /** Sorted by seq; the first is the pair's default word. */
   words: BondsHonorWord[];
   units: [BondsHonorUnit | null, BondsHonorUnit | null];
+  /** A unit member and a Virtual Singer: the Virtual Singer can wear the member's unit outfit. */
+  configurableUnitVirtualSinger: boolean;
+};
+
+/**
+ * How a player shows a Bonds honor: its word, whether the pair swaps sides (the game's
+ * reverse view types), and whether a Virtual Singer wears the partner's unit outfit (the
+ * `*_unit_virtual_singer` view types).
+ */
+export type BondsHonorView = {
+  wordId: number | null;
+  reverse: boolean;
+  unitVirtualSinger: boolean;
+};
+
+export const defaultBondsHonorView: BondsHonorView = {
+  wordId: null,
+  reverse: false,
+  unitVirtualSinger: false
+};
+
+/** Region data for the Virtual Singer outfit option. */
+export type BondsHonorViewData = {
+  /** Game character unit IDs by `{gameCharacterId}:{unit}`. */
+  characterUnitIds: Record<string, number>;
+  /** Unit names by unit key, for example `light_sound`. */
+  unitNames: Record<string, string>;
 };
 
 /** One character pair (bonds group) and its honors, one per rarity. */

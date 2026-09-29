@@ -5,6 +5,7 @@
   import ListToolbarButton from "$lib/components/shared/ListToolbarButton.svelte";
   import HonorSummary from "./HonorSummary.svelte";
   import HonorArtwork from "./HonorArtwork.svelte";
+  import { defaultBondsHonorView, type BondsHonorView } from "$lib/domain/honor";
   import type { CatalogueHonorDegree } from "$lib/honor-degree";
   import type { HonorDegreeAssetResolver } from "@platform/ui-shell";
 
@@ -13,11 +14,18 @@
     name: string;
     degree?: CatalogueHonorDegree;
     countLabel: string;
+    /** A Bonds pair's display options, which its members' `degreeFor` apply. */
+    bondsView?: {
+      words: { id: number; name: string; description: string | null }[];
+      /** The Virtual Singer's own outfit and the partner's unit outfit, when both exist. */
+      outfit: { defaultLabel: string; unitLabel: string } | null;
+    };
     members: {
       key: string;
       name: string;
       variantLabel?: string;
       degree: CatalogueHonorDegree;
+      degreeFor?: (view: BondsHonorView) => CatalogueHonorDegree;
       levels: { label: string; description: string | null }[];
     }[];
   };
@@ -44,6 +52,12 @@
     onLoadMore,
     onRetryLoadMore,
     resolveAsset,
+    bondsViewLabels = {
+      options: "Display",
+      word: "Word",
+      outfit: "Virtual Singer outfit",
+      swapSides: "Swap sides"
+    },
     ...frame
   }: Omit<
     ComponentProps<typeof CatalogueFrame>,
@@ -71,6 +85,7 @@
     onLoadMore?: () => void;
     onRetryLoadMore?: () => void;
     resolveAsset: HonorDegreeAssetResolver;
+    bondsViewLabels?: { options: string; word: string; outfit: string; swapSides: string };
   } = $props();
 
   let dialog: HTMLDialogElement | null = $state(null);
@@ -79,6 +94,13 @@
   let sentinel: HTMLDivElement | null = $state(null);
   let previousCatalogueKey = $state<string | null>(null);
   const activeGroup = $derived(items.find((group) => group.key === activeGroupKey) ?? null);
+  // How the open Bonds pair is shown; each pair opens with the game's defaults.
+  let bondsView = $state<BondsHonorView>({ ...defaultBondsHonorView });
+  const selectedWord = $derived(
+    activeGroup?.bondsView?.words.find((word) => word.id === bondsView.wordId) ??
+      activeGroup?.bondsView?.words[0] ??
+      null
+  );
   const categoryTypes = $derived([
     ...new Set(honorTypes.filter((honorType) => honorType.trim().length > 0))
   ]);
@@ -123,6 +145,7 @@
 
     lastTrigger = event.currentTarget as HTMLButtonElement;
     activeGroupKey = group.key;
+    bondsView = { ...defaultBondsHonorView };
     await tick();
     if (!dialog.open) {
       if (typeof dialog.showModal === "function") dialog.showModal();
@@ -184,6 +207,103 @@
   <p class="text-sm text-(--archive-text-muted)">{levelsLabel}: {getLevelCount(group)}</p>
 {/snippet}
 
+{#snippet bondsViewControls(options: NonNullable<HonorCatalogueGroup["bondsView"]>)}
+  <fieldset
+    class="fieldset mb-4 gap-3 rounded-xl border border-(--archive-border-subtle) bg-(--archive-surface-sunken) p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end"
+  >
+    <legend class="fieldset-legend text-sm font-medium">{bondsViewLabels.options}</legend>
+    {#if options.words.length > 0}
+      <div class="flex min-w-0 flex-col gap-1 sm:col-span-2">
+        <span id={`${dialogId}-word`} class="text-sm font-medium text-(--archive-text-default)">
+          {bondsViewLabels.word}
+        </span>
+        <!-- A pair has at most five words, so they fit as choices. -->
+        <div
+          class="flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-labelledby={`${dialogId}-word`}
+          aria-describedby={selectedWord?.description ? `${dialogId}-word-note` : undefined}
+        >
+          {#each options.words as word (word.id)}
+            {@const checked = selectedWord?.id === word.id}
+            <label
+              class="btn touch-target h-auto min-h-11 whitespace-normal wrap-anywhere has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary {checked
+                ? 'btn-primary'
+                : 'btn-outline border-primary text-primary'}"
+            >
+              <input
+                type="radio"
+                class="sr-only"
+                name={`${dialogId}-word`}
+                {checked}
+                onchange={() => {
+                  bondsView = { ...bondsView, wordId: word.id };
+                }}
+              />
+              {word.name}
+            </label>
+          {/each}
+        </div>
+        {#if selectedWord?.description}
+          <p id={`${dialogId}-word-note`} class="text-xs wrap-anywhere text-(--archive-text-muted)">
+            {selectedWord.description}
+          </p>
+        {/if}
+      </div>
+    {/if}
+    {#if options.outfit}
+      <div class="flex min-w-0 flex-col gap-1">
+        <span id={`${dialogId}-outfit`} class="text-sm font-medium text-(--archive-text-default)">
+          {bondsViewLabels.outfit}
+        </span>
+        <!-- Unit names can be long, so the choices stack on phones. -->
+        <div
+          class="join join-vertical w-full sm:join-horizontal sm:w-auto"
+          role="radiogroup"
+          aria-labelledby={`${dialogId}-outfit`}
+        >
+          {#each [false, true] as unitVirtualSinger (unitVirtualSinger)}
+            {@const checked = bondsView.unitVirtualSinger === unitVirtualSinger}
+            <label
+              class="join-item btn touch-target h-auto min-h-11 whitespace-normal has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary {checked
+                ? 'btn-primary'
+                : 'btn-outline border-primary text-primary'}"
+            >
+              <input
+                type="radio"
+                class="sr-only"
+                name={`${dialogId}-outfit`}
+                {checked}
+                onchange={() => {
+                  bondsView = { ...bondsView, unitVirtualSinger };
+                }}
+              />
+              {unitVirtualSinger ? options.outfit.unitLabel : options.outfit.defaultLabel}
+            </label>
+          {/each}
+        </div>
+      </div>
+    {/if}
+    <label
+      class="flex items-center gap-3 rounded-xl border border-(--archive-border-subtle) bg-(--archive-surface-raised) px-3 py-2 {options.outfit
+        ? ''
+        : 'sm:col-span-2 sm:justify-self-start'}"
+    >
+      <span class="text-sm font-medium text-(--archive-text-default)"
+        >{bondsViewLabels.swapSides}</span
+      >
+      <input
+        type="checkbox"
+        class="toggle toggle-primary shrink-0"
+        checked={bondsView.reverse}
+        onchange={(event) => {
+          bondsView = { ...bondsView, reverse: event.currentTarget.checked };
+        }}
+      />
+    </label>
+  </fieldset>
+{/snippet}
+
 {#snippet members(group: HonorCatalogueGroup)}
   <ul class="min-w-0 divide-y divide-(--archive-border-subtle)">
     {#each group.members as member (member.key)}
@@ -194,7 +314,7 @@
         {/if}
         {#if group.members.length > 1}
           <HonorArtwork
-            degree={member.degree}
+            degree={member.degreeFor?.(bondsView) ?? member.degree}
             {resolveAsset}
             label={member.name}
             {imageUnavailableLabel}
@@ -371,7 +491,7 @@
           }}
         >
           <div
-            class="modal-box flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-3xl flex-col overflow-hidden p-0 sm:w-[calc(100%-2rem)]"
+            class="modal-box flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-xl flex-col overflow-hidden p-0 sm:w-[calc(100%-2rem)]"
           >
             {#if activeGroup}
               <header
@@ -397,6 +517,9 @@
                 </button>
               </header>
               <div class="min-h-0 overflow-y-auto p-4 sm:p-5">
+                {#if activeGroup.bondsView}
+                  {@render bondsViewControls(activeGroup.bondsView)}
+                {/if}
                 {@render members(activeGroup)}
               </div>
             {/if}

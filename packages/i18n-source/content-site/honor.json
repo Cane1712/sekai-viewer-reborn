@@ -31,5 +31,9 @@
   "honor.rarity.middle": "Middle",
   "honor.rarity.high": "High",
   "honor.rarity.highest": "Highest",
+  "honor.bonds.display": "Display",
+  "honor.bonds.word": "Word",
+  "honor.bonds.outfit": "Virtual Singer outfit",
+  "honor.bonds.swapSides": "Swap sides",
   "honor.page": "Page {page} of {total}"
 }
