@@ -17,9 +17,48 @@ if [[ -n "$status_output" ]]; then
   exit 1
 fi
 
-printf '%s\n' 'pre-push: running local validation (format:check, test, lint, check, and i18n:check; production build runs in CI).' >&2
-pnpm format:check
-pnpm test
-pnpm lint
-pnpm check
+run_full_gate() {
+  printf '%s\n' "pre-push: $1; running the full local gate (format:check, test, lint, check, and i18n:check; production build runs in CI)." >&2
+  pnpm format:check
+  pnpm test
+  pnpm lint
+  pnpm check
+  pnpm i18n:check
+}
+
+# The branch is compared with the default branch, so only the packages it changes (and their
+# dependents) are validated. CI still runs the full `pnpm verify:ci` sequence, including the build.
+default_ref="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || printf '%s' origin/main)"
+if ! base="$(git merge-base HEAD "$default_ref" 2>/dev/null)"; then
+  run_full_gate "no merge base with $default_ref"
+  exit 0
+fi
+
+changed_files=()
+while IFS= read -r -d '' file; do
+  changed_files+=("$file")
+done < <(git diff --name-only --diff-filter=ACMR -z "$base" HEAD --)
+
+# Root configuration (lockfile, Prettier, ESLint, TypeScript, Turbo) can change every package's
+# result, so a change outside the package folders, the docs and the changesets runs everything.
+# The length guard keeps macOS's bash 3.2 from treating an empty array as unbound.
+if ((${#changed_files[@]} > 0)); then
+  for file in "${changed_files[@]}"; do
+    case "$file" in
+      apps/* | packages/* | docs/* | .changeset/* | *.md) ;;
+      *)
+        run_full_gate "$file changed"
+        exit 0
+        ;;
+    esac
+  done
+fi
+
+printf '%s\n' "pre-push: validating changes since $default_ref (format:check on changed files; test, lint and check on affected packages; i18n:check). CI runs the full gate and the production build." >&2
+if ((${#changed_files[@]} > 0)); then
+  pnpm exec prettier --check --ignore-unknown -- "${changed_files[@]}"
+fi
+# One Turbo run overlaps the three tasks; the concurrency cap keeps the parallel ESLint, Vitest and
+# svelte-check processes from starving each other (the default of 10 timed ESLint workers out).
+TURBO_SCM_BASE="$base" TURBO_SCM_HEAD=HEAD pnpm exec turbo run test lint check --affected --concurrency=4 --output-logs=errors-only
 pnpm i18n:check

@@ -121,8 +121,13 @@ When installed:
   validation on staged JavaScript, TypeScript, and Svelte source files under
   `apps/*/src`, `packages/*/src`, and `scripts`.
 - `pre-push` requires a clean worktree, including ordinary untracked files, and
-  runs the local quality gate: `pnpm format:check`, `pnpm test`, `pnpm lint`,
-  `pnpm check`, and `pnpm i18n:check`. It intentionally skips the full production build so that
+  validates the branch against its merge base with the default branch: a
+  Prettier check on the changed files, one parallel
+  `turbo run test lint check --affected --concurrency=4` over the changed packages and their
+  dependents, and `pnpm i18n:check`. A change outside `apps/`, `packages/`,
+  `docs/`, `.changeset/` and Markdown files (root configuration such as the
+  lockfile, Prettier, ESLint, TypeScript or Turbo) runs the full gate over every
+  package instead. It intentionally skips the full production build so that
   pushes get fast local feedback; CI continues to run the unchanged
   `pnpm verify:ci` sequence, including `pnpm build`.
 
