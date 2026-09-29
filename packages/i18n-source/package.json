@@ -14,6 +14,7 @@
     "./content-site/honor.json": "./content-site/honor.json",
     "./content-site/mission.json": "./content-site/mission.json",
     "./content-site/music.json": "./content-site/music.json",
+    "./content-site/mysekai.json": "./content-site/mysekai.json",
     "./content-site/server.json": "./content-site/server.json",
     "./content-site/virtual-live.json": "./content-site/virtual-live.json",
     "./content-site/unit.json": "./content-site/unit.json",

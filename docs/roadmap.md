@@ -203,6 +203,11 @@ Catalogue (list + detail) coverage already shipped for:
 - **Virtual Lives** — list (`/virtual-lives/[region]`), detail (`/virtual-live/[region]/[id]`).
 - **Game News** — regional news catalogue (`/news/[region]`) with tag, spoiler,
   and pagination controls.
+- **MySekai** — furniture list (`/mysekai/fixtures/[region]`) and detail
+  (`/mysekai/fixture/[region]/[id]`), materials list and detail
+  (`/mysekai/materials/[region]`, `/mysekai/material/[region]/[id]`), and
+  soundtracks (`/mysekai/soundtracks/[region]`), on the `mysekaiFixtures`,
+  `mysekaiMaterials`, and `mysekaiMusicRecords` master API contracts.
 
 These use generated public `sekai-master-api` contracts, region-aware
 availability switching, and scoped localized UI bundles with remote dictionaries
@@ -279,7 +284,8 @@ remain **Planned** pending frontend work.
 
 ### Exploratory — Later Candidates
 
-Broader game content such as **Stories** and **MySekai** are considered later
+Broader game content such as **Stories** and further MySekai areas (gates,
+character talks, blueprints for tools and canvases) are considered later
 candidates only. They are not part of the committed current scope and have no
 timeline.
 

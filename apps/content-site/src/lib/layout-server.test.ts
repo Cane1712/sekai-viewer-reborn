@@ -72,6 +72,18 @@ describe("content-site layout server load", () => {
     );
   });
 
+  it("loads the mysekai namespace for MySekai routes", async () => {
+    loadI18nMessageBundle.mockResolvedValueOnce({});
+
+    await load(createLoadEvent("/mysekai/fixture/jp/7"));
+
+    expect(loadI18nMessageBundle).toHaveBeenCalledWith(
+      "en",
+      ["common", "mysekai", "error"],
+      expect.any(Function)
+    );
+  });
+
   it("loads the unit namespace for unit detail routes", async () => {
     loadI18nMessageBundle.mockResolvedValueOnce({ unitRosterTitle: "Members" });
 

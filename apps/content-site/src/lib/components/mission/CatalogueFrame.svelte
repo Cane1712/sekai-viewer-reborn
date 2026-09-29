@@ -37,6 +37,7 @@
     pageLabel,
     loadingPlaceholder,
     controls,
+    inlineSearch = false,
     filters,
     children
   }: {
@@ -57,6 +58,8 @@
     pageLabel?: string;
     loadingPlaceholder?: Snippet;
     controls?: Snippet;
+    /** Puts the search beside a few compact controls on large screens instead of above them. */
+    inlineSearch?: boolean;
     /** Filters that narrow the chosen tab, in their own card below the tabs. */
     filters?: Snippet;
     children: Snippet;
@@ -84,14 +87,18 @@
   {#if pageIdentity}{@render pageIdentity()}{/if}
 
   {#if controls}
-    <!-- Search gets its own row, so its width never depends on the controls beside it. -->
+    <!-- Search gets its own row, so its width never depends on the controls beside it,
+         unless the page opts into one row for a few compact controls. -->
     <div
       class="content-card-elevated flex flex-col gap-4 rounded-2xl border border-(--archive-border-subtle) p-4"
+      class:lg:flex-row={inlineSearch}
+      class:lg:items-end={inlineSearch}
     >
       {#if onSearch}
         <form
           role="search"
           class="w-full min-w-0 sm:max-w-md"
+          class:lg:flex-1={inlineSearch}
           onsubmit={(event) => {
             event.preventDefault();
             onSearch?.(searchInput.value.trim());
@@ -118,7 +125,10 @@
           </div>
         </form>
       {/if}
-      <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div
+        class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+        class:lg:shrink-0={inlineSearch}
+      >
         {@render controls()}
       </div>
     </div>

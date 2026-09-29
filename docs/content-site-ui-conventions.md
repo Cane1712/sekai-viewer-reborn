@@ -248,6 +248,10 @@ Current `content-site` sidebar groups:
 - Progression (`navigation.progression`): mission goals and the honors they award
   - Missions
   - Honors
+- MySekai (`navigation.mysekai`): MySekai reference data
+  - Furniture (`/mysekai/fixtures/:region`, detail `/mysekai/fixture/:region/:id`)
+  - Materials (`/mysekai/materials/:region`, detail `/mysekai/material/:region/:id`)
+  - Soundtracks (`/mysekai/soundtracks/:region`)
 - Project (`navigation.project`)
   - Support
 

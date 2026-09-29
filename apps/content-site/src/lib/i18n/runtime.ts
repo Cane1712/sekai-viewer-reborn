@@ -18,6 +18,7 @@ import homeSourceMessages from "@platform/i18n-source/content-site/home.json";
 import honorSourceMessages from "@platform/i18n-source/content-site/honor.json";
 import missionSourceMessages from "@platform/i18n-source/content-site/mission.json";
 import musicSourceMessages from "@platform/i18n-source/content-site/music.json";
+import mysekaiSourceMessages from "@platform/i18n-source/content-site/mysekai.json";
 import serverSourceMessages from "@platform/i18n-source/content-site/server.json";
 import virtualLiveSourceMessages from "@platform/i18n-source/content-site/virtual-live.json";
 import unitSourceMessages from "@platform/i18n-source/content-site/unit.json";
@@ -37,6 +38,7 @@ export const contentSiteI18nNamespaces = [
   "music",
   "honor",
   "mission",
+  "mysekai",
   "error",
   "server",
   "virtual-live",
@@ -88,6 +90,7 @@ const localSourceMessagesByNamespace: Record<I18nNamespace, I18nMessages> = {
   honor: honorSourceMessages,
   mission: missionSourceMessages,
   music: musicSourceMessages,
+  mysekai: mysekaiSourceMessages,
   server: serverSourceMessages,
   unit: unitSourceMessages,
   "virtual-live": virtualLiveSourceMessages

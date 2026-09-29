@@ -18,6 +18,13 @@
 
 import { addIcon } from "@iconify/svelte";
 
+// ── MySekai ──────────────────────────────────────────────────────────
+import sofaOutline from "@iconify-icons/mdi/sofa-outline";
+import pineTreeVariantOutline from "@iconify-icons/mdi/pine-tree-variant-outline";
+import album from "@iconify-icons/mdi/album";
+import hammerWrench from "@iconify-icons/mdi/hammer-wrench";
+import packageVariantClosed from "@iconify-icons/mdi/package-variant-closed";
+
 // ── Layout / Navigation ──────────────────────────────────────────────
 import homeVariantOutline from "@iconify-icons/mdi/home-variant-outline";
 import cardsOutline from "@iconify-icons/mdi/cards-outline";
@@ -209,3 +216,9 @@ addIcon("mdi:download", download);
 addIcon("mdi:volume-high", volumeHigh);
 addIcon("mdi:volume-off", volumeOff);
 addIcon("mdi:close", close);
+
+addIcon("mdi:sofa-outline", sofaOutline);
+addIcon("mdi:pine-tree-variant-outline", pineTreeVariantOutline);
+addIcon("mdi:album", album);
+addIcon("mdi:hammer-wrench", hammerWrench);
+addIcon("mdi:package-variant-closed", packageVariantClosed);

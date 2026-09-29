@@ -1058,6 +1058,12 @@ export type SharedMusicObjectResponse = {
     title?: unknown;
 };
 
+export type SharedMusicSoundTrackCategoryResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+};
+
 export type SharedMusicVocalCharacterResponse = {
     characterId?: unknown;
     sortOrder?: unknown;
@@ -1079,6 +1085,196 @@ export type SharedMusicVocalsResponse = {
     items?: Array<SharedMusicVocalResponse>;
 };
 
+export type SharedMysekaiBlueprintResponse = {
+    craftCountLimit?: number;
+    id: number;
+    isAvailableWithoutPossession?: boolean;
+    isEnableSketch?: boolean;
+    isObtainedByConvert?: boolean;
+    materialCosts: Array<SharedMysekaiMaterialQuantityResponse>;
+};
+
+export type SharedMysekaiFixtureCharacterBonusResponse = {
+    bonusRate?: number;
+    gameCharacterIds: Array<number>;
+};
+
+export type SharedMysekaiFixtureColorResponse = {
+    colorCode?: string;
+    textureId?: number;
+};
+
+export type SharedMysekaiFixtureDetailResponse = {
+    anotherColors: Array<SharedMysekaiFixtureColorResponse>;
+    assetbundleName?: string;
+    blueprint?: SharedMysekaiBlueprintResponse;
+    characterBonus?: SharedMysekaiFixtureCharacterBonusResponse;
+    colorCode?: string;
+    disassembleMaterials: Array<SharedMysekaiMaterialQuantityResponse>;
+    firstPutCost?: number;
+    flavorText?: string;
+    gridSize?: SharedMysekaiFixtureGridSizeResponse;
+    id: number;
+    isAssembled?: boolean;
+    isDisassembled?: boolean;
+    mainGenre?: SharedMysekaiFixtureGenreResponse;
+    mysekaiFixtureMainGenreId?: number;
+    mysekaiFixtureSubGenreId?: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    mysekaiSettableSiteType?: string;
+    name: string;
+    pronunciation?: string;
+    secondPutCost?: number;
+    seq?: number;
+    subGenre?: SharedMysekaiFixtureGenreResponse;
+    tagIds: Array<number>;
+    tags: Array<SharedMysekaiFixtureTagResponse>;
+};
+
+export type SharedMysekaiFixtureFiltersResponse = {
+    mainGenres: Array<SharedMysekaiFixtureMainGenreResponse>;
+    tags: Array<SharedMysekaiFixtureTagResponse>;
+};
+
+export type SharedMysekaiFixtureGenreResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+};
+
+export type SharedMysekaiFixtureGridSizeResponse = {
+    depth: number;
+    height: number;
+    width: number;
+};
+
+export type SharedMysekaiFixtureListItemResponse = {
+    assetbundleName?: string;
+    gridSize?: SharedMysekaiFixtureGridSizeResponse;
+    id: number;
+    mysekaiFixtureMainGenreId?: number;
+    mysekaiFixtureSubGenreId?: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    tagIds: Array<number>;
+};
+
+export type SharedMysekaiFixtureListResponse = {
+    items: Array<SharedMysekaiFixtureListItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiFixtureMainGenreResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+    /**
+     * SubGenres are the sub-genres fixtures of this main genre use, by ID.
+     */
+    subGenres?: Array<SharedMysekaiFixtureGenreResponse>;
+};
+
+export type SharedMysekaiFixtureSummaryResponse = {
+    assetbundleName?: string;
+    id: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    name: string;
+};
+
+export type SharedMysekaiFixtureTagResponse = {
+    externalId?: number;
+    id: number;
+    mysekaiFixtureTagType: string;
+    name: string;
+    pronunciation?: string;
+};
+
+export type SharedMysekaiMaterialDetailResponse = {
+    description?: string;
+    gameCharacterIds: Array<number>;
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    sites: Array<SharedMysekaiSiteResponse>;
+    usedBy: Array<SharedMysekaiMaterialUseResponse>;
+};
+
+export type SharedMysekaiMaterialListResponse = {
+    items: Array<SharedMysekaiMaterialResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiMaterialQuantityResponse = {
+    material: SharedMysekaiMaterialSummaryResponse;
+    quantity: number;
+};
+
+export type SharedMysekaiMaterialResponse = {
+    description?: string;
+    gameCharacterIds: Array<number>;
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    sites: Array<SharedMysekaiSiteResponse>;
+};
+
+export type SharedMysekaiMaterialSummaryResponse = {
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+};
+
+export type SharedMysekaiMaterialUseResponse = {
+    fixture: SharedMysekaiFixtureSummaryResponse;
+    quantity: number;
+};
+
+export type SharedMysekaiMusicRecordFiltersResponse = {
+    soundTrackCategories: Array<SharedMusicSoundTrackCategoryResponse>;
+};
+
+export type SharedMysekaiMusicRecordListResponse = {
+    items: Array<SharedMysekaiMusicRecordResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiMusicRecordMusicResponse = {
+    assetbundleName?: string;
+    id: number;
+    title: string;
+};
+
+export type SharedMysekaiMusicRecordResponse = {
+    externalId: number;
+    id: number;
+    music?: SharedMysekaiMusicRecordMusicResponse;
+    mysekaiMusicTrackType: string;
+    soundTrack?: SharedMysekaiMusicRecordSoundTrackResponse;
+};
+
+export type SharedMysekaiMusicRecordSoundTrackResponse = {
+    assetbundleFileName?: string;
+    assetbundleName?: string;
+    id: number;
+    musicSoundTrackCategoryId?: number;
+    title: string;
+};
+
 export type SharedMysekaiPhotoDecorationListResponse = {
     items?: Array<SharedMysekaiPhotoDecorationResponse>;
     pagination?: SharedPaginationResponse;
@@ -1090,6 +1286,11 @@ export type SharedMysekaiPhotoDecorationResponse = {
     id?: number;
     name?: string;
     seq?: number;
+};
+
+export type SharedMysekaiSiteResponse = {
+    id: number;
+    name: string;
 };
 
 export type SharedPaginationResponse = {
@@ -4701,6 +4902,359 @@ export type GetMusicsByRegionByIdVocalsResponses = {
 };
 
 export type GetMusicsByRegionByIdVocalsResponse = GetMusicsByRegionByIdVocalsResponses[keyof GetMusicsByRegionByIdVocalsResponses];
+
+export type GetMysekaiFixturesByRegionFiltersData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: never;
+    url: '/mysekaiFixtures/{region}/filters';
+};
+
+export type GetMysekaiFixturesByRegionFiltersErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionFiltersError = GetMysekaiFixturesByRegionFiltersErrors[keyof GetMysekaiFixturesByRegionFiltersErrors];
+
+export type GetMysekaiFixturesByRegionFiltersResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureFiltersResponse;
+};
+
+export type GetMysekaiFixturesByRegionFiltersResponse = GetMysekaiFixturesByRegionFiltersResponses[keyof GetMysekaiFixturesByRegionFiltersResponses];
+
+export type GetMysekaiFixturesByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Case-insensitive substring of the name or its reading
+         */
+        name?: string;
+        /**
+         * Comma-separated main genre IDs
+         */
+        main_genre_id?: string;
+        /**
+         * Comma-separated sub-genre IDs
+         */
+        sub_genre_id?: string;
+        /**
+         * Comma-separated tag IDs, all required
+         */
+        tag_id?: string;
+        /**
+         * Sort field (id|seq|name)
+         */
+        sort_by?: string;
+        /**
+         * Sort order (asc|desc)
+         */
+        sort_order?: string;
+    };
+    url: '/mysekaiFixtures/{region}/list';
+};
+
+export type GetMysekaiFixturesByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionListError = GetMysekaiFixturesByRegionListErrors[keyof GetMysekaiFixturesByRegionListErrors];
+
+export type GetMysekaiFixturesByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureListResponse;
+};
+
+export type GetMysekaiFixturesByRegionListResponse = GetMysekaiFixturesByRegionListResponses[keyof GetMysekaiFixturesByRegionListResponses];
+
+export type GetMysekaiFixturesByRegionByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+        /**
+         * Fixture ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/mysekaiFixtures/{region}/{id}';
+};
+
+export type GetMysekaiFixturesByRegionByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Not Found
+     */
+    404: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionByIdError = GetMysekaiFixturesByRegionByIdErrors[keyof GetMysekaiFixturesByRegionByIdErrors];
+
+export type GetMysekaiFixturesByRegionByIdResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureDetailResponse;
+};
+
+export type GetMysekaiFixturesByRegionByIdResponse = GetMysekaiFixturesByRegionByIdResponses[keyof GetMysekaiFixturesByRegionByIdResponses];
+
+export type GetMysekaiMaterialsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Comma-separated material types, such as wood or mineral
+         */
+        material_type?: string;
+    };
+    url: '/mysekaiMaterials/{region}/list';
+};
+
+export type GetMysekaiMaterialsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMaterialsByRegionListError = GetMysekaiMaterialsByRegionListErrors[keyof GetMysekaiMaterialsByRegionListErrors];
+
+export type GetMysekaiMaterialsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMaterialListResponse;
+};
+
+export type GetMysekaiMaterialsByRegionListResponse = GetMysekaiMaterialsByRegionListResponses[keyof GetMysekaiMaterialsByRegionListResponses];
+
+export type GetMysekaiMaterialsByRegionByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+        /**
+         * Material ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/mysekaiMaterials/{region}/{id}';
+};
+
+export type GetMysekaiMaterialsByRegionByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Not Found
+     */
+    404: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMaterialsByRegionByIdError = GetMysekaiMaterialsByRegionByIdErrors[keyof GetMysekaiMaterialsByRegionByIdErrors];
+
+export type GetMysekaiMaterialsByRegionByIdResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMaterialDetailResponse;
+};
+
+export type GetMysekaiMaterialsByRegionByIdResponse = GetMysekaiMaterialsByRegionByIdResponses[keyof GetMysekaiMaterialsByRegionByIdResponses];
+
+export type GetMysekaiMusicRecordsByRegionFiltersData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: never;
+    url: '/mysekaiMusicRecords/{region}/filters';
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersError = GetMysekaiMusicRecordsByRegionFiltersErrors[keyof GetMysekaiMusicRecordsByRegionFiltersErrors];
+
+export type GetMysekaiMusicRecordsByRegionFiltersResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMusicRecordFiltersResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersResponse = GetMysekaiMusicRecordsByRegionFiltersResponses[keyof GetMysekaiMusicRecordsByRegionFiltersResponses];
+
+export type GetMysekaiMusicRecordsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Track type (music|music_sound_track)
+         */
+        track_type?: string;
+        /**
+         * Comma-separated sound-track category IDs; keeps sound-track records only
+         */
+        sound_track_category_id?: string;
+        /**
+         * Case-insensitive substring of the song or sound-track title
+         */
+        name?: string;
+        /**
+         * Include records of unpublished songs
+         */
+        spoiler?: boolean;
+    };
+    url: '/mysekaiMusicRecords/{region}/list';
+};
+
+export type GetMysekaiMusicRecordsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionListError = GetMysekaiMusicRecordsByRegionListErrors[keyof GetMysekaiMusicRecordsByRegionListErrors];
+
+export type GetMysekaiMusicRecordsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMusicRecordListResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionListResponse = GetMysekaiMusicRecordsByRegionListResponses[keyof GetMysekaiMusicRecordsByRegionListResponses];
 
 export type GetMysekaiPhotoDecorationsByRegionListData = {
     body?: never;
