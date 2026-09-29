@@ -14,6 +14,9 @@
     imageUnavailableLabel: string;
     decorative?: boolean;
   } = $props();
+  // The main slot scales down with its container; only below this width is it too small
+  // to read, and the smaller sub slot takes over.
+  const MAIN_SLOT_MIN_WIDTH = 200;
   let visible = $state(false);
   let narrow = $state(false);
   let failedDegree = $state.raw<CatalogueHonorDegree | null>(null);
@@ -23,7 +26,7 @@
       typeof ResizeObserver === "undefined"
         ? null
         : new ResizeObserver(([entry]) => {
-            narrow = entry.contentRect.width < 266;
+            narrow = entry.contentRect.width < MAIN_SLOT_MIN_WIDTH;
           });
     resize?.observe(node);
     const intersection =
@@ -52,7 +55,12 @@
   }
 </script>
 
-<div use:observe class="flex h-14 w-full max-w-67 items-center overflow-hidden">
+<!-- The main slot fills the available width up to its full 380px size; the sub slot, used
+     below MAIN_SLOT_MIN_WIDTH, keeps its small fixed size. -->
+<div
+  use:observe
+  class="flex w-full max-w-95 items-center overflow-hidden {narrow ? 'h-14' : 'aspect-19/4'}"
+>
   {#if honor.kind === "empty" || failedDegree === degree}
     <span class="text-sm text-(--archive-text-muted)">{imageUnavailableLabel}</span>
   {:else if visible}
@@ -65,6 +73,7 @@
           size="S"
           {label}
           {decorative}
+          class={narrow ? "" : "h-auto! w-full!"}
         />
         {#snippet failed()}
           <span class="text-sm text-(--archive-text-muted)">{imageUnavailableLabel}</span>

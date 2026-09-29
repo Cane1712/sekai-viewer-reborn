@@ -410,10 +410,10 @@
     resultsLabel={frame.resultsLabel ?? frame.labels.title}
   >
     {#snippet loadingPlaceholder()}
-      <div class="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div class="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {#each Array.from({ length: 12 }) as _, index (index)}
           <div class="content-card-shell min-h-32 rounded-2xl p-4">
-            <div class="h-14 w-full max-w-67 rounded-lg bg-(--archive-surface-sunken)"></div>
+            <div class="aspect-19/4 w-full max-w-95 rounded-lg bg-(--archive-surface-sunken)"></div>
             <div class="mt-3 h-4 w-3/4 rounded bg-(--archive-surface-sunken)"></div>
           </div>
         {/each}
@@ -428,7 +428,7 @@
           {frame.labels.empty}
         </p>
       {:else}
-        <div class="grid min-w-0 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div class="grid min-w-0 items-start gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {#each items as group (group.key)}
             <button
               type="button"
@@ -492,7 +492,7 @@
           }}
         >
           <div
-            class="modal-box flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-xl flex-col overflow-hidden p-0 sm:w-[calc(100%-2rem)]"
+            class="modal-box flex max-h-[92dvh] w-[calc(100%-1rem)] max-w-lg flex-col overflow-hidden p-0 sm:w-[calc(100%-2rem)]"
           >
             {#if activeGroup}
               <header
