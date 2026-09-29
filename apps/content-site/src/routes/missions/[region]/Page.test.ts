@@ -205,13 +205,13 @@ describe("Missions page", () => {
     renderPage(page([normal], { page: 1, hasNext: false }), "normalMissions");
 
     const tablist = await screen.findByRole("tablist", { name: "Mission family" });
-    expect(withinTab(tablist, "Normal missions").getAttribute("aria-selected")).toBe("true");
+    expect(withinTab(tablist, "Normal").getAttribute("aria-selected")).toBe("true");
     expect(screen.getByText("Play a live")).toBeTruthy();
     expect(screen.getByRole("link", { name: "EN" }).getAttribute("href")).toBe(
       "/missions/en?family=normalMissions"
     );
 
-    await fireEvent.click(withinTab(tablist, "All missions"));
+    await fireEvent.click(withinTab(tablist, "All"));
     expect(goto).toHaveBeenLastCalledWith("/missions/jp", { keepFocus: true, noScroll: true });
   });
 
@@ -253,6 +253,19 @@ describe("Missions page", () => {
     ).toBeTruthy();
     const leoNeed = await screen.findByRole("list", { name: "Leo/need" });
     expect(within(leoNeed).getAllByRole("button")).toHaveLength(2);
+    // The character filter has its own card, apart from the family tabs.
+    const tabsCard = screen
+      .getByRole("tablist", { name: "Mission family" })
+      .closest(".content-card-elevated");
+    const filterCard = leoNeed.closest(".content-card-elevated");
+    expect(filterCard).toBeTruthy();
+    expect(filterCard).not.toBe(tabsCard);
+    expect(
+      Array.from(
+        screen.getByRole("tablist", { name: "Mission family" }).querySelectorAll('[role="tab"]'),
+        (tab) => tab.textContent?.trim()
+      )
+    ).toEqual(["All", "Story", "Character", "Normal"]);
     expect(screen.getByRole("list", { name: "VIRTUAL SINGER" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Load more missions" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Change character" })).toBeNull();
@@ -280,25 +293,46 @@ describe("Missions page", () => {
     expect(
       (await screen.findByRole("button", { name: "Ichika Hoshino" })).getAttribute("aria-pressed")
     ).toBe("true");
-    expect(screen.getByText("Showing Ichika Hoshino")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "View character profile" }).getAttribute("href")).toBe(
-      "/character/jp/1"
-    );
+    // No "Showing" line or profile link under the picker.
+    expect(screen.queryByText(/Showing/)).toBeNull();
+    expect(screen.queryByRole("link", { name: "View character profile" })).toBeNull();
     expect(screen.getByRole("link", { name: "EN" }).getAttribute("href")).toBe(
       "/missions/en?family=characterMissionV2s&character=1"
     );
 
-    // Small screens collapse the grid behind a toggle once a character is chosen.
-    const toggle = screen.getByRole("button", { name: "Change character" });
+    // Small screens collapse the grid to the chosen character's unit and avatar, which
+    // reopens it.
+    const toggle = screen.getByRole("button", { name: "Change character: Ichika Hoshino" });
     const grid = document.getElementById(toggle.getAttribute("aria-controls")!)!;
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.parentElement?.classList).toContain("sm:hidden");
+    expect(within(toggle.parentElement!).getByRole("img", { name: "Leo/need" })).toBeTruthy();
     expect(grid.classList).toContain("hidden");
     expect(grid.classList).toContain("sm:grid");
     await fireEvent.click(toggle);
-    expect(
-      screen.getByRole("button", { name: "Hide characters" }).getAttribute("aria-expanded")
-    ).toBe("true");
     expect(grid.classList).not.toContain("hidden");
+    expect(screen.queryByRole("button", { name: /^Change character/ })).toBeNull();
+  });
+
+  it("shows avatars in grey until hovered, focused, or chosen", async () => {
+    renderPage(
+      page([makeMission("characterMissionV2s", 1, "Clear a live with Ichika")], {
+        page: 1,
+        hasNext: false
+      }),
+      "characterMissionV2s",
+      1
+    );
+
+    const avatarOf = async (name: string) =>
+      (await screen.findByRole("button", { name })).firstElementChild as HTMLElement;
+    const chosen = await avatarOf("Ichika Hoshino");
+    expect(chosen.classList).toContain("grayscale-0");
+    expect(chosen.classList).not.toContain("grayscale");
+    const other = await avatarOf("Saki Tenma");
+    expect(other.classList).toContain("grayscale");
+    expect(other.classList).toContain("group-hover:grayscale-0");
+    expect(other.classList).toContain("group-focus-visible:grayscale-0");
   });
 
   it("fetches the character list once per region while switching characters", async () => {

@@ -395,17 +395,8 @@
       error: t("mission.characterPickerError"),
       retry: t("mission.retry"),
       otherGroup: t("mission.characterPickerOtherGroup"),
-      selected: t("mission.characterSelected"),
-      profile: t("mission.characterProfile"),
-      change: t("mission.characterChange"),
-      collapse: t("mission.characterCollapse")
+      change: t("mission.characterChange")
     }}
-    profileHref={data.query.character === null
-      ? null
-      : resolve("/character/[region]/[id]", {
-          region: data.region,
-          id: String(data.query.character)
-        })}
     onSelect={selectCharacter}
     onRetry={() => showCharacterList(data.region)}
   />
@@ -414,6 +405,7 @@
 {#snippet characterMissionGroup()}
   <CharacterMissionGrid
     missions={items.filter((mission) => mission.family === "characterMissionV2s")}
+    tileSurface="shell"
     region={data.region}
     locale={data.uiLocale}
     labels={{
@@ -472,8 +464,7 @@
   catalogueKey={`${data.region}:${data.query.family ?? "all"}:${data.query.character ?? ""}`}
   familyLabel={t("mission.familyLabel")}
   selectedFamily={data.query.family}
-  getFamilyLabel={(family) =>
-    family === null ? t("mission.family.all") : t(`mission.family.${family}`)}
+  getFamilyLabel={(family) => t(`mission.tab.${family ?? "all"}`)}
   onFamilyChange={navigateFamily}
   hasNext={Boolean(data.query.family) && !initialError && hasNext}
   {isLoadingMore}
