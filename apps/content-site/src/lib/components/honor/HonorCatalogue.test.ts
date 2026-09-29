@@ -342,6 +342,17 @@ describe("HonorCatalogue", () => {
     expect(document.getElementById(resultsId!)).toBeTruthy();
   });
 
+  it("drops unsubmitted search text when the catalogue changes", async () => {
+    const { rerender } = render(HonorCatalogue, { ...props, onSearch: vi.fn() });
+    const input = screen.getByRole("searchbox") as HTMLInputElement;
+    await fireEvent.input(input, { target: { value: "draft" } });
+    expect(input.value).toBe("draft");
+
+    await rerender({ ...props, onSearch: vi.fn(), catalogueKey: "jp:event" });
+
+    expect(input.value).toBe("");
+  });
+
   it("uses one toggle sort control in the shared deck without a combobox", async () => {
     const onSortOrderChange = vi.fn();
     const { container, rerender } = render(HonorCatalogue, {
@@ -360,9 +371,16 @@ describe("HonorCatalogue", () => {
 
     const deck = container.querySelector(".content-card-elevated");
     expect(deck).toBeTruthy();
-    expect(deck?.classList).toContain("lg:flex-row");
-    expect(deck?.querySelector('[role="search"]')).toBeTruthy();
-    expect(deck?.querySelector('[role="search"]')?.classList).toContain("lg:flex-1");
+    // Search has its own row, so its width does not depend on the category tabs.
+    expect(deck?.classList).not.toContain("lg:flex-row");
+    const search = deck?.querySelector('[role="search"]');
+    expect(search?.parentElement).toBe(deck);
+    expect(search?.classList).toContain("sm:max-w-md");
+    expect(search?.querySelector("span.flex")?.classList).not.toContain("flex-wrap");
+    const controlsRow = deck?.querySelector('[role="tablist"]')?.parentElement?.parentElement;
+    expect(controlsRow?.parentElement).toBe(deck);
+    expect(controlsRow?.classList).toContain("lg:flex-row");
+    expect(controlsRow?.querySelector('[role="group"]')).toBeTruthy();
     expect(deck?.querySelector('[role="search"]')?.classList).not.toContain(
       "content-card-elevated"
     );

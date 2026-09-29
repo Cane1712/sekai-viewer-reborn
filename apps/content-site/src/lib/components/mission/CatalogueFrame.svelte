@@ -27,6 +27,7 @@
     status = "ready",
     empty = false,
     query = "",
+    resetKey = null,
     pageIdentity,
     resultsLabel,
     onSearch,
@@ -44,6 +45,8 @@
     status?: "ready" | "loading" | "error";
     empty?: boolean;
     query?: string;
+    /** Any change (for example a new category) also drops unsubmitted search text. */
+    resetKey?: string | null;
     pageIdentity?: Snippet;
     resultsLabel?: string;
     onSearch?: (query: string) => void;
@@ -58,8 +61,9 @@
 
   const searchInput = $state({ value: untrack(() => query) });
 
-  // Only query changes reset the draft; typing does not retrigger this effect.
+  // Only query and reset-key changes reset the draft; typing does not retrigger this effect.
   $effect(() => {
+    void resetKey;
     searchInput.value = query;
   });
 </script>
@@ -71,13 +75,14 @@
   {#if pageIdentity}{@render pageIdentity()}{/if}
 
   {#if controls}
+    <!-- Search gets its own row, so its width never depends on the controls beside it. -->
     <div
-      class="content-card-elevated flex flex-col gap-4 rounded-2xl border border-(--archive-border-subtle) p-4 lg:flex-row lg:items-end"
+      class="content-card-elevated flex flex-col gap-4 rounded-2xl border border-(--archive-border-subtle) p-4"
     >
       {#if onSearch}
         <form
           role="search"
-          class="min-w-0 lg:flex-1"
+          class="w-full min-w-0 sm:max-w-md"
           onsubmit={(event) => {
             event.preventDefault();
             onSearch?.(searchInput.value.trim());
@@ -85,20 +90,26 @@
         >
           <label class="flex flex-col gap-2 text-sm font-semibold">
             <span>{labels.search}</span>
-            <span class="flex flex-wrap gap-2">
+            <span class="flex gap-2">
               <input
                 type="search"
-                class="input min-h-11 min-w-0 flex-1 basis-48 bg-(--archive-surface-default)"
+                class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
                 bind:value={searchInput.value}
               />
-              <button type="submit" class="btn touch-target" disabled={status === "loading"}>
+              <button
+                type="submit"
+                class="btn touch-target shrink-0"
+                disabled={status === "loading"}
+              >
                 <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
               </button>
             </span>
           </label>
         </form>
       {/if}
-      {@render controls()}
+      <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        {@render controls()}
+      </div>
     </div>
   {:else if onSearch}
     <form
@@ -111,13 +122,13 @@
     >
       <label class="flex flex-col gap-2 text-sm font-semibold">
         <span>{labels.search}</span>
-        <span class="flex flex-wrap gap-2">
+        <span class="flex gap-2">
           <input
             type="search"
-            class="input min-h-11 min-w-0 flex-1 basis-48 bg-(--archive-surface-default)"
+            class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
             bind:value={searchInput.value}
           />
-          <button type="submit" class="btn touch-target" disabled={status === "loading"}>
+          <button type="submit" class="btn touch-target shrink-0" disabled={status === "loading"}>
             <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
           </button>
         </span>

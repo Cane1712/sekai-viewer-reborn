@@ -403,6 +403,7 @@
 <div id={resultsId}>
   <CatalogueFrame
     {...frame}
+    resetKey={catalogueKey}
     empty={false}
     {controls}
     {pageIdentity}

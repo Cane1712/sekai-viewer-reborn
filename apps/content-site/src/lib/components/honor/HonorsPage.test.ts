@@ -275,6 +275,28 @@ describe("Honors page group contract", () => {
     );
   });
 
+  it("clears the search when the category changes", async () => {
+    const searched = data(result, "jp", "event");
+    render(HonorsPage, {
+      data: { ...searched, query: { ...searched.query, name: "Stage" } },
+      params: { region: "jp" },
+      form: null
+    });
+
+    const tablist = await screen.findByRole("tablist", { name: "Title category" });
+    await fireEvent.click(within(tablist).getByRole("tab", { name: "Achievements" }));
+    expect(goto).toHaveBeenLastCalledWith(
+      "/honors/jp?honor_type=achievement&sort_by=id&sort_order=asc",
+      { keepFocus: true, noScroll: true }
+    );
+    // Sorting keeps the search.
+    await fireEvent.click(screen.getByRole("button", { name: "Title ID order: Descending" }));
+    expect(goto).toHaveBeenLastCalledWith(
+      "/honors/jp?honor_type=event&name=Stage&sort_by=id&sort_order=desc",
+      { keepFocus: true, noScroll: true }
+    );
+  });
+
   it("keeps handled and rejected stream errors retryable and supports empty groups", async () => {
     const { rerender } = render(HonorsPage, {
       params: { region: "jp" },

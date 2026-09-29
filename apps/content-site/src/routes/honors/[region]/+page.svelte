@@ -318,7 +318,7 @@
   selectedHonorType={data.query.honorType}
   categoryLabel={t("honor.categoryLabel")}
   {getHonorTypeLabel}
-  onHonorTypeChange={(honorType) => navigateQuery({ honorType })}
+  onHonorTypeChange={(honorType) => navigateQuery({ honorType, name: "" })}
   {sortOrder}
   sortOrderLabel={t("honor.sortOrder")}
   sortAscendingLabel={t("honor.sortAscending")}
