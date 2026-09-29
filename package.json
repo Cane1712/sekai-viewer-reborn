@@ -3,7 +3,7 @@
   "private": true,
   "license": "MIT",
   "version": "0.1.0",
-  "packageManager": "pnpm@12.6.0",
+  "packageManager": "pnpm@12.8.0",
   "scripts": {
     "dev": "turbo dev --parallel",
     "build": "turbo build",
