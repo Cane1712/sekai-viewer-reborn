@@ -777,17 +777,17 @@ addIcon("mdi:music-note-outline", musicNoteOutline);
 
 ## 11. Shared Components Reused
 
-| Pattern                       | Component                                                       |
-| ----------------------------- | --------------------------------------------------------------- |
-| Page header + breadcrumbs     | `PageHeader` + `RegionBadgeSwitch`                              |
-| Visual asset with tabs + zoom | `EventDetailAssetCard.svelte` (Event) / inline pattern (others) |
-| Metadata rows                 | `dl` + `content-card-inset` (no separate component)             |
-| Character avatar              | `CharacterAvatar.svelte` (`variant="lg"`)                       |
-| Unit icon                     | `UnitIconBadge.svelte` (`variant="lg"`)                         |
-| Audio player                  | `AudioPlayer` from `@platform/ui-shell` (`EventDetailBgmCard`)  |
-| Voice play button             | `VoicePlayButton.svelte`                                        |
-| Debug dialog                  | `EventDebugDialog.svelte`                                       |
-| Image preview                 | `ImagePreviewDialog` from `@platform/ui-shell`                  |
+| Pattern                       | Component                                                          |
+| ----------------------------- | ------------------------------------------------------------------ |
+| Page header + breadcrumbs     | `PageHeader` + `RegionBadgeSwitch`                                 |
+| Visual asset with tabs + zoom | `EventDetailAssetCard.svelte` (Event) / inline pattern (others)    |
+| Metadata rows                 | `dl` + `content-card-inset` (no separate component)                |
+| Character avatar              | `CharacterAvatar.svelte` (`variant="lg"`)                          |
+| Unit icon                     | `UnitIconBadge.svelte` (`variant="lg"`)                            |
+| Audio player                  | `AudioPlayer` from `@platform/ui-shell` (`EventDetailBgmCard`)     |
+| Voice play button             | `VoicePlayButton` from `@platform/ui-shell` (`CardDetailInfoCard`) |
+| Debug dialog                  | `EventDebugDialog.svelte`                                          |
+| Image preview                 | `ImagePreviewDialog` from `@platform/ui-shell`                     |
 
 ## 12. i18n Namespace Mapping
 
