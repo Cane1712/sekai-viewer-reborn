@@ -33,3 +33,35 @@ export type HonorGroup = HonorGroupMetadata & {
   id: number;
   honors: Honor[];
 };
+
+export type BondsHonorWord = {
+  id: number;
+  seq: number | null;
+  assetBundleName: string | null;
+  name: string | null;
+};
+
+export type BondsHonorUnit = {
+  id: number;
+  gameCharacterId: number | null;
+  unit: string | null;
+  colorCode: string | null;
+};
+
+export type BondsHonor = {
+  id: number;
+  bondsGroupId: number;
+  name: string | null;
+  honorRarity: string | null;
+  levels: { level: number | null; description: string | null }[];
+  /** Sorted by seq; the first is the pair's default word. */
+  words: BondsHonorWord[];
+  units: [BondsHonorUnit | null, BondsHonorUnit | null];
+};
+
+/** One character pair (bonds group) and its honors, one per rarity. */
+export type BondsHonorGroup = {
+  id: number;
+  name: string | null;
+  honors: BondsHonor[];
+};

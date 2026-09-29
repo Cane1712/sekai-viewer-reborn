@@ -56,6 +56,7 @@ const group: HonorGroup = {
 type PageData = ComponentProps<typeof HonorsPage>["data"];
 const result: Awaited<PageData["catalogue"]> = {
   items: [group],
+  bondsItems: [],
   availableHonorTypes: ["achievement", "event"],
   loadFailed: false,
   pagination: { page: 1, totalPages: 3, hasNext: true, pageSize: 24, total: 30 }
@@ -73,7 +74,7 @@ const data = (
   globalNotices: [],
   siteVersion: "test",
   i18nMessages: {
-    "navigation.honors": "Honors",
+    "navigation.honors": "Titles",
     home: "Home",
     imageUnavailable: "Image unavailable"
   }
@@ -187,7 +188,7 @@ describe("Honors page group contract", () => {
       params: { region: "jp" },
       form: null
     });
-    expect(screen.getByRole("status").textContent).toContain("Loading honors");
+    expect(screen.getByRole("status").textContent).toContain("Loading titles");
     complete(result);
     await screen.findByText("Group identity");
     expect(screen.getAllByText("Group identity")).toHaveLength(1);
@@ -242,9 +243,9 @@ describe("Honors page group contract", () => {
       form: null
     });
 
-    const tablist = await screen.findByRole("tablist", { name: "Honor category" });
+    const tablist = await screen.findByRole("tablist", { name: "Title category" });
     expect(
-      within(tablist).getByRole("tab", { name: "All honors" }).getAttribute("aria-selected")
+      within(tablist).getByRole("tab", { name: "All titles" }).getAttribute("aria-selected")
     ).toBe("false");
     expect(within(tablist).getByRole("tab", { name: "Events" }).getAttribute("aria-selected")).toBe(
       "true"
@@ -253,10 +254,10 @@ describe("Honors page group contract", () => {
     expect(within(tablist).getByRole("tab", { name: "Birthdays" })).toBeTruthy();
     expect(within(tablist).getByRole("tab", { name: "Character" })).toBeTruthy();
     expect(within(tablist).getByRole("tab", { name: "Rank Match" })).toBeTruthy();
-    expect(within(tablist).getByRole("tab", { name: "Other honors" })).toBeTruthy();
+    expect(within(tablist).getByRole("tab", { name: "Other titles" })).toBeTruthy();
     expect(within(tablist).queryByRole("tab", { name: "future_category" })).toBeNull();
 
-    await fireEvent.click(within(tablist).getByRole("tab", { name: "All honors" }));
+    await fireEvent.click(within(tablist).getByRole("tab", { name: "All titles" }));
     expect(goto).toHaveBeenLastCalledWith("/honors/jp?sort_by=id&sort_order=asc", {
       keepFocus: true,
       noScroll: true
@@ -266,7 +267,7 @@ describe("Honors page group contract", () => {
       "/honors/jp?honor_type=achievement&sort_by=id&sort_order=asc",
       { keepFocus: true, noScroll: true }
     );
-    await fireEvent.click(screen.getByRole("button", { name: "Honor ID order: Descending" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Title ID order: Descending" }));
     expect(goto).toHaveBeenLastCalledWith(
       "/honors/jp?honor_type=event&sort_by=id&sort_order=desc",
       { keepFocus: true, noScroll: true }
@@ -279,16 +280,16 @@ describe("Honors page group contract", () => {
       form: null,
       data: data(Promise.resolve({ ...result, loadFailed: true, items: [] }))
     });
-    await screen.findByText("Honors could not be loaded. Please try again.");
+    await screen.findByText("Titles could not be loaded. Please try again.");
     await fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(invalidateAll).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: "Next" })).toBeNull();
     await rerender({ data: data(Promise.resolve({ ...result, items: [] })) });
-    await screen.findByText("No honors found. Try another region.");
+    await screen.findByText("No titles found. Try another region.");
     const rejected = Promise.reject(new Error("Failed"));
     rejected.catch(() => {});
     await rerender({ data: data(rejected) });
-    await screen.findByText("Honors could not be loaded. Please try again.");
+    await screen.findByText("Titles could not be loaded. Please try again.");
     await fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(invalidateAll).toHaveBeenCalledTimes(2);
   });

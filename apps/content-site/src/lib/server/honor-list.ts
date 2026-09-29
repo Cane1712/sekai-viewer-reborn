@@ -1,9 +1,19 @@
 import {
+  getBondsHonorsByRegionList,
   getHonorGroupsByRegionList,
   getHonorsByRegionById,
   type GetHonorGroupsByRegionListData
 } from "@platform/sekai-master-api-sdk";
-import type { Honor, HonorGroup, HonorGroupMetadata, HonorLevel } from "$lib/domain/honor";
+import type {
+  BondsHonor,
+  BondsHonorGroup,
+  BondsHonorUnit,
+  BondsHonorWord,
+  Honor,
+  HonorGroup,
+  HonorGroupMetadata,
+  HonorLevel
+} from "$lib/domain/honor";
 import type { CataloguePagination } from "./catalogue-data";
 import {
   getArray,
@@ -36,9 +46,23 @@ export type HonorListPagination = CataloguePagination;
 
 export type HonorListPage = {
   items: HonorGroup[];
+  /** Filled instead of items when the Bonds category is selected. */
+  bondsItems: BondsHonorGroup[];
   availableHonorTypes: string[];
   pagination: HonorListPagination;
 };
+
+/** Bonds honors are their own entity, listed as an extra honor category. */
+export const BONDS_HONOR_TYPE = "bonds";
+// A page holds whole pairs in every region: 72 honors are 24 JP/TW/KR/CN pairs
+// (three rarities each) or 36 EN pairs (two). A pair split by a page boundary is
+// merged when the next page is appended.
+export const BONDS_HONOR_LIST_PAGE_SIZE = 72;
+
+const withBondsHonorType = (honorTypes: string[]): string[] => [
+  ...honorTypes.filter((honorType) => honorType !== BONDS_HONOR_TYPE),
+  BONDS_HONOR_TYPE
+];
 
 const getTrimmedSearchParam = (value: string | null): string => {
   const trimmed = value?.trim() ?? "";
@@ -223,6 +247,7 @@ const parseAvailableHonorTypes = (payload: unknown): string[] => {
 
 export const createEmptyHonorListPage = (page: number): HonorListPage => ({
   items: [],
+  bondsItems: [],
   availableHonorTypes: [],
   pagination: {
     page,
@@ -239,6 +264,10 @@ export const fetchHonorListPage = async (
   page = 1,
   queryState: HonorListQueryState = getDefaultHonorListQueryState()
 ): Promise<HonorListPage> => {
+  if (queryState.honorType === BONDS_HONOR_TYPE) {
+    return fetchBondsHonorListPage(baseUrl, region, page, queryState);
+  }
+
   const response = await getHonorGroupsByRegionList({
     baseUrl: getMasterApiV1BaseUrl(baseUrl),
     path: { region },
@@ -258,12 +287,136 @@ export const fetchHonorListPage = async (
 
   return {
     items,
-    availableHonorTypes: parseAvailableHonorTypes(response.data),
+    bondsItems: [],
+    availableHonorTypes: withBondsHonorType(parseAvailableHonorTypes(response.data)),
     pagination: parseApiPagination(
       response.data,
       page,
       DEFAULT_HONOR_LIST_PAGE_SIZE,
       sourceGroups.length
+    )
+  };
+};
+
+const parseBondsHonorUnit = (payload: unknown): BondsHonorUnit | null => {
+  const root = getObject(payload);
+  const id = getPositiveInteger(root?.id);
+  if (!root || id === null) return null;
+  return {
+    id,
+    gameCharacterId: getPositiveInteger(root.gameCharacterId),
+    unit: getString(root.unit),
+    colorCode: getString(root.colorCode)
+  };
+};
+
+const parseBondsHonorWord = (payload: unknown): BondsHonorWord | null => {
+  const root = getObject(payload);
+  const id = getPositiveInteger(root?.id);
+  if (!root || id === null) return null;
+  return {
+    id,
+    seq: getNumber(root.seq),
+    assetBundleName: getString(root.assetbundleName ?? root.assetBundleName),
+    name: getString(root.name)
+  };
+};
+
+export const parseBondsHonor = (payload: unknown): BondsHonor | null => {
+  const root = getObject(payload);
+  const id = getPositiveInteger(root?.id);
+  const bondsGroupId = getPositiveInteger(root?.bondsGroupId);
+  if (!root || id === null || bondsGroupId === null) return null;
+  return {
+    id,
+    bondsGroupId,
+    name: getString(root.name),
+    honorRarity: getString(root.honorRarity),
+    levels: getArray(root.levels).flatMap((item) => {
+      const level = getObject(item);
+      return level
+        ? [{ level: getNumber(level.level), description: getString(level.description) }]
+        : [];
+    }),
+    words: getArray(root.words)
+      .flatMap((item) => {
+        const word = parseBondsHonorWord(item);
+        return word ? [word] : [];
+      })
+      .sort((left, right) => (left.seq ?? 0) - (right.seq ?? 0) || left.id - right.id),
+    units: [parseBondsHonorUnit(root.characterUnit1), parseBondsHonorUnit(root.characterUnit2)]
+  };
+};
+
+/** Groups consecutive honors of the same pair, keeping the list order. */
+export const groupBondsHonors = (honors: BondsHonor[]): BondsHonorGroup[] =>
+  honors.reduce<BondsHonorGroup[]>((groups, honor) => {
+    const last = groups.at(-1);
+    if (last?.id === honor.bondsGroupId) {
+      last.honors.push(honor);
+    } else {
+      groups.push({ id: honor.bondsGroupId, name: honor.name, honors: [honor] });
+    }
+    return groups;
+  }, []);
+
+/** The honor-type filter comes from the regular groups; a failure only hides it. */
+const fetchAvailableHonorTypes = async (baseUrl: string, region: string): Promise<string[]> => {
+  try {
+    const response = await getHonorGroupsByRegionList({
+      baseUrl: getMasterApiV1BaseUrl(baseUrl),
+      path: { region },
+      query: { page: 1, page_size: 1 }
+    });
+    return response.error ? [] : parseAvailableHonorTypes(response.data);
+  } catch {
+    return [];
+  }
+};
+
+const fetchBondsHonorListPage = async (
+  baseUrl: string,
+  region: string,
+  page: number,
+  queryState: HonorListQueryState
+): Promise<HonorListPage> => {
+  const [response, availableHonorTypes] = await Promise.all([
+    getBondsHonorsByRegionList({
+      baseUrl: getMasterApiV1BaseUrl(baseUrl),
+      path: { region },
+      query: {
+        page,
+        page_size: BONDS_HONOR_LIST_PAGE_SIZE,
+        sort_by: "id",
+        sort_order: queryState.sortOrder,
+        ...(queryState.name.trim() ? { name: queryState.name.trim() } : {})
+      }
+    }),
+    fetchAvailableHonorTypes(baseUrl, region)
+  ]);
+
+  if (response.error || !response.data) {
+    throw new Error("Failed to load bonds honor catalogue.");
+  }
+  const sourceHonors = getItems(response.data);
+  if (sourceHonors === null) {
+    throw new TypeError("Bonds honor catalogue returned invalid honors.");
+  }
+
+  return {
+    items: [],
+    bondsItems: groupBondsHonors(
+      sourceHonors.flatMap((item) => {
+        const honor = parseBondsHonor(item);
+        return honor ? [honor] : [];
+      })
+    ),
+    availableHonorTypes: withBondsHonorType(availableHonorTypes),
+    pagination: parseApiPagination(
+      response.data,
+      page,
+      BONDS_HONOR_LIST_PAGE_SIZE,
+      sourceHonors.length
     )
   };
 };

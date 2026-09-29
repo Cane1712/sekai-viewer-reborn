@@ -93,6 +93,6 @@ describe("CharacterRankCard honor rewards", () => {
 
     expect(await screen.findByText("Rank 5")).toBeTruthy();
     expect(screen.queryByRole("img", { name: /Lv\./ })).toBeNull();
-    expect(screen.getByText("Rank 5").closest("li")?.textContent).toContain("Honor");
+    expect(screen.getByText("Rank 5").closest("li")?.textContent).toContain("Title");
   });
 });

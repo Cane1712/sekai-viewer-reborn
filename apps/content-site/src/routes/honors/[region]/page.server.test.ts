@@ -131,7 +131,7 @@ describe("honor catalogue page load", () => {
 
     await expect(result.catalogue).resolves.toMatchObject({
       items: [],
-      availableHonorTypes: ["character", "event"],
+      availableHonorTypes: ["character", "event", "bonds"],
       loadFailed: false
     });
     expect(getHonorGroupsByRegionList.mock.calls[0]?.[0].query).toMatchObject({

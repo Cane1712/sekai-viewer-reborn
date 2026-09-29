@@ -38,9 +38,9 @@
       case "material":
         return t("characterRankResource.material", "Material");
       case "honor":
-        return t("characterRankResource.honor", "Honor");
+        return t("characterRankResource.honor", "Title");
       case "bonds_honor":
-        return t("characterRankResource.bonds_honor", "Bonds honor");
+        return t("characterRankResource.bonds_honor", "Kizuna title");
       case "virtual_coin":
         return t("characterRankResource.virtual_coin", "Virtual coins");
       case "stamp":

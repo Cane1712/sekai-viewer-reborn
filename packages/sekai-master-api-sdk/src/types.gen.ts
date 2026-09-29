@@ -29,6 +29,11 @@ export type MasterdataSyncStatus = {
 };
 
 export type SharedBondsHonorCharacterUnitResponse = {
+    /**
+     * ColorCode is the unit's color, such as "#33aaee"; it tints that
+     * character's half of the degree background.
+     */
+    colorCode?: string;
     gameCharacterId?: number;
     id?: number;
     unit?: string;
@@ -1770,6 +1775,10 @@ export type GetBondsHonorsByRegionListData = {
          * Exactly two distinct underlying game character IDs, comma-separated (for example: 1,2)
          */
         game_character_ids?: string;
+        /**
+         * Case-insensitive substring of the honor name or of one of its words
+         */
+        name?: string;
     };
     url: '/bondsHonors/{region}/list';
 };

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { buildHonorDegreeLayout } from "./honor-degree";
-  import type { HonorDegreeProps } from "./honor-degree.types";
+  import type { HonorDegreeProps, HonorDegreeSlicedImage } from "./honor-degree.types";
 
   const componentId = $props.id();
   let {
@@ -8,15 +8,62 @@
     resolveAsset,
     slot = "main",
     size = "L",
-    label = "Honor",
+    label = "Title",
     title,
     decorative = false,
     class: className = ""
   }: HonorDegreeProps = $props();
 
   const layout = $derived(buildHonorDegreeLayout(honor, resolveAsset, slot, size));
-  const accessibleLabel = $derived(label.trim() || "Honor");
+  const accessibleLabel = $derived(label.trim() || "Title");
+  const maskId = (name: string): string => `${componentId}-${name}`;
+  const rotation = (image: HonorDegreeSlicedImage): string | undefined => {
+    if (!image.rotate) return undefined;
+    const first = image.columns[0];
+    const last = image.columns.at(-1);
+    if (!first || !last) return undefined;
+    const centreX = (first.x + last.x + last.width) / 2;
+    return `rotate(${image.rotate} ${centreX} ${image.y + image.height / 2})`;
+  };
 </script>
+
+<!-- One horizontally 9-sliced image: each column crops its source span and stretches it. -->
+{#snippet sliced(image: HonorDegreeSlicedImage)}
+  <g transform={rotation(image)}>
+    {#each image.columns as column, index (index)}
+      <svg
+        x={column.x}
+        y={image.y}
+        width={column.width}
+        height={image.height}
+        viewBox={`${column.sourceX} 0 ${column.sourceWidth} ${image.sourceHeight}`}
+        preserveAspectRatio="none"
+      >
+        <image
+          href={image.href}
+          width={image.sourceWidth}
+          height={image.sourceHeight}
+          preserveAspectRatio="none"
+        />
+      </svg>
+    {/each}
+  </g>
+{/snippet}
+
+{#snippet alphaMask(name: string, image: HonorDegreeSlicedImage)}
+  <mask
+    id={maskId(name)}
+    maskUnits="userSpaceOnUse"
+    maskContentUnits="userSpaceOnUse"
+    {...{ "mask-type": "alpha" }}
+    x={0}
+    y={0}
+    width={layout.width}
+    height={layout.height}
+  >
+    {@render sliced(image)}
+  </mask>
+{/snippet}
 
 <svg
   xmlns="http://www.w3.org/2000/svg"
@@ -31,38 +78,60 @@
   focusable="false"
 >
   {#if !decorative}<title>{title?.trim() || accessibleLabel}</title>{/if}
-  {#if layout.layers.length > 0}
-    <g
-      transform={layout.reverse ? `translate(${layout.width},0) scale(-1,1)` : undefined}
-      aria-hidden="true"
-    >
-      {#if layout.layers.some((layer) => layer.mask)}
+  {#if layout.layers.length > 0 || layout.bonds}
+    <g aria-hidden="true">
+      {#if layout.bonds}
+        {@const bonds = layout.bonds}
         <defs>
-          {#each layout.layers as layer (layer.name)}
-            {#if layer.mask}
-              <mask
-                id={`${componentId}-${layer.name}-mask`}
-                maskUnits="userSpaceOnUse"
-                maskContentUnits="userSpaceOnUse"
-                {...{ "mask-type": "alpha" }}
-                x={layer.mask.x}
-                y={layer.mask.y}
-                width={layer.mask.width}
-                height={layer.mask.height}
-              >
-                <image
-                  data-mask-for={layer.name}
-                  href={layer.mask.href}
-                  x={layer.mask.x}
-                  y={layer.mask.y}
-                  width={layer.mask.width}
-                  height={layer.mask.height}
-                  preserveAspectRatio="none"
-                />
-              </mask>
+          {#each bonds.backgrounds as background, index (index)}
+            {@render alphaMask(`bonds-background-${index}`, background.image)}
+          {/each}
+          {#if bonds.characterMask}
+            {@render alphaMask("bonds-characters", bonds.characterMask)}
+          {/if}
+          {#each bonds.characters as character, index (index)}
+            {#if character.window}
+              {@render alphaMask(`bonds-window-${index}`, character.window)}
             {/if}
           {/each}
         </defs>
+        {#each bonds.backgrounds as background, index (index)}
+          <rect
+            data-layer={`bonds-background-${index}`}
+            x={0}
+            y={0}
+            width={layout.width}
+            height={layout.height}
+            fill={background.color}
+            mask={`url(#${maskId(`bonds-background-${index}`)})`}
+          />
+        {/each}
+        {#if bonds.pattern}
+          <image
+            data-layer="bonds-pattern"
+            href={bonds.pattern}
+            x={0}
+            y={0}
+            width={layout.width}
+            height={layout.height}
+            preserveAspectRatio="none"
+          />
+        {/if}
+        <g mask={bonds.characterMask ? `url(#${maskId("bonds-characters")})` : undefined}>
+          {#each bonds.characters as character, index (index)}
+            <g mask={character.window ? `url(#${maskId(`bonds-window-${index}`)})` : undefined}>
+              <image
+                data-layer={`bonds-character-${index}`}
+                href={character.href}
+                x={character.x}
+                y={character.y}
+                width={character.width}
+                height={character.height}
+                preserveAspectRatio="none"
+              />
+            </g>
+          {/each}
+        </g>
       {/if}
       {#each layout.layers as layer (layer.name)}
         <image
@@ -72,7 +141,6 @@
           y={layer.y}
           width={layer.width}
           height={layer.height}
-          mask={layer.mask ? `url(#${componentId}-${layer.name}-mask)` : undefined}
           preserveAspectRatio={layer.fit === "contain" ? "xMidYMid meet" : "none"}
         />
       {/each}

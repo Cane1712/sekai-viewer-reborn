@@ -4,8 +4,12 @@ import {
   buildHonorDegreeLayout,
   liveMasterLocalAssetResources
 } from "@platform/ui-shell";
-import { createHonorDegreeAssetResolver, toCatalogueHonorDegree } from "./honor-degree";
-import type { Honor, HonorGroupMetadata } from "./domain/honor";
+import {
+  createHonorDegreeAssetResolver,
+  toCatalogueBondsHonorDegree,
+  toCatalogueHonorDegree
+} from "./honor-degree";
+import type { BondsHonor, Honor, HonorGroupMetadata } from "./domain/honor";
 
 vi.mock("$env/dynamic/public", () => ({
   env: { PUBLIC_REMOTE_ASSET_BASE_URL: "https://assets.test" }
@@ -425,5 +429,55 @@ describe("catalogue honor adapter", () => {
     expect(degree.main).not.toHaveProperty("reverse");
     expect(degree.main).not.toHaveProperty("characters");
     expect(degree.main).not.toHaveProperty("word");
+  });
+});
+
+describe("Bonds honor degrees", () => {
+  const bondsHonor: BondsHonor = {
+    id: 1212603,
+    bondsGroupId: 12126,
+    name: "Miku and KAITO",
+    honorRarity: "high",
+    levels: [
+      { level: 1, description: "Reach bond rank 5" },
+      { level: 2, description: "Reach bond rank 10" }
+    ],
+    words: [
+      { id: 12126001, seq: 1, assetBundleName: "honorname_2126_default_2126", name: "Default" },
+      { id: 12126010, seq: 10, assetBundleName: "honorname_2126_01", name: "Cool Singers" }
+    ],
+    units: [
+      { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
+      { id: 26, gameCharacterId: 26, unit: "piapro", colorCode: "#3366cc" }
+    ]
+  };
+
+  it("uses unit art, unit colours, and the default word with the rarity suffix", () => {
+    const degree = toCatalogueBondsHonorDegree(bondsHonor);
+
+    expect(degree.main).toEqual({
+      kind: "bonds",
+      rarity: 2,
+      level: 1,
+      colors: ["#33ccbb", "#3366cc"],
+      characters: [
+        { bundlePath: "bonds_honor/character", resourceName: "chr_sd_21_01" },
+        { bundlePath: "bonds_honor/character", resourceName: "chr_sd_26_01" }
+      ],
+      word: { bundlePath: "bonds_honor/word", resourceName: "honorname_2126_default_2126_03" }
+    });
+    expect(degree.sub).toBe(degree.main);
+  });
+
+  it("resolves re-exported Bonds art past cached trimmed copies", () => {
+    const resolve = createHonorDegreeAssetResolver("jp");
+
+    expect(resolve("bonds_honor/character", "chr_sd_21_01")).toMatch(
+      /^https:\/\/assets\.test\/.+\/bonds_honor\/character\/chr_sd_21_01\.webp\?v=2$/
+    );
+    expect(resolve("bonds_honor/word", "honorname_2126_01_03")).toMatch(
+      /\/bonds_honor\/word\/honorname_2126_01_03\.webp\?v=2$/
+    );
+    expect(resolve("bonds_honor/other", "x")).toBeNull();
   });
 });

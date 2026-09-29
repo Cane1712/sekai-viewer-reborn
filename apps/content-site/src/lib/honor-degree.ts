@@ -4,7 +4,7 @@ import {
   type HonorDegreeAssetResolver
 } from "@platform/ui-shell";
 import { getRemoteAssetEndpointURL } from "$lib/assets/index";
-import type { Honor, HonorGroupMetadata, HonorLevel } from "$lib/domain/honor";
+import type { BondsHonor, Honor, HonorGroupMetadata, HonorLevel } from "$lib/domain/honor";
 import type { SupportedRegion } from "$lib/domain/regions";
 
 export type CatalogueHonorDegree = { main: HonorDegreeInput; sub: HonorDegreeInput };
@@ -168,7 +168,40 @@ export function createHonorDegreeAssetResolver(region: SupportedRegion): HonorDe
     if (bundle === "local/honor") return `/degree/${name}.png`;
     if (bundle === "local/bonds-honor") return `/degree/bonds/${name}.png`;
     if (bundle === "local/live-master") return `/degree/live-master/${name}.png`;
+    // Bonds art was re-exported untrimmed (160×136 and 380×80) on 2026-09-27; the
+    // query skips trimmed copies still in Cloudflare and browser caches (14 days).
+    if (/^bonds_honor\/(character|word)$/.test(bundle)) {
+      return `${getRemoteAssetEndpointURL(`${bundle}/${name}.webp`, region)}?v=2`;
+    }
     if (!/^(honor|honor_frame|rank_live\/honor)\//.test(bundle)) return null;
     return getRemoteAssetEndpointURL(`${bundle}/${name}.webp`, region);
   };
+}
+
+const twoDigits = (value: number): string => String(value).padStart(2, "0");
+
+/**
+ * A Bonds honor with its pair's default word (the lowest seq) at its first level.
+ * Character art is keyed by character unit; word textures carry the rarity + 1.
+ */
+export function toCatalogueBondsHonorDegree(honor: BondsHonor): CatalogueHonorDegree {
+  const rarity = normalizeHonorDegreeRarity(honor.honorRarity);
+  const word = honor.words[0]?.assetBundleName;
+  const level = honor.levels.find((entry) => (entry.level ?? 0) > 0)?.level ?? null;
+  const character = (unitId: number | undefined) =>
+    unitId === undefined
+      ? null
+      : { bundlePath: "bonds_honor/character", resourceName: `chr_sd_${twoDigits(unitId)}_01` };
+  const degree: HonorDegreeInput = {
+    kind: "bonds",
+    rarity,
+    level,
+    colors: [honor.units[0]?.colorCode, honor.units[1]?.colorCode],
+    characters: [character(honor.units[0]?.id), character(honor.units[1]?.id)],
+    word:
+      word && rarity !== null
+        ? { bundlePath: "bonds_honor/word", resourceName: `${word}_${twoDigits(rarity + 1)}` }
+        : null
+  };
+  return { main: degree, sub: degree };
 }

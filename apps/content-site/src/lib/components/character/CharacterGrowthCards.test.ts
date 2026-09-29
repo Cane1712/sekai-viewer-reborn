@@ -100,7 +100,7 @@ describe("CharacterRankCard", () => {
     expect(screen.getByText("Rank 5")).toBeTruthy();
     const rank5Rewards = screen.getByText("Rank 5").closest("li")!.lastElementChild as HTMLElement;
     expect(Array.from(rank5Rewards.children, (reward) => text(reward))).toEqual([
-      "Honor ×1",
+      "Title ×1",
       "Crystals ×300"
     ]);
     // Only honor ranks are milestones; the EXP a rank needs sits under its label.
