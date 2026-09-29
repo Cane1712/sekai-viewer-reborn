@@ -32,6 +32,11 @@
   } from "$lib/domain/event-detail";
   import type { SupportedRegion } from "$lib/domain/regions";
   import Icon from "@iconify/svelte";
+  import {
+    REWARD_CHIP_CLASS,
+    REWARD_CHIP_ICON_CLASS,
+    REWARD_CHIP_QUANTITY_CLASS
+  } from "$lib/styles/reward-chip";
 
   type SummaryItem = {
     key: string;
@@ -581,7 +586,7 @@
 {#snippet rewardDetailChip(detail: EventRewardResourceBoxDetail, _index: number)}
   {@const imageSrc = getRewardDetailImageSrc(detail)}
   <span
-    class="badge badge-outline h-auto min-h-9 max-w-full gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
+    class={REWARD_CHIP_CLASS}
     title={getRewardDetailLabel(detail)}
     aria-label={getRewardDetailLabel(detail)}
   >
@@ -589,20 +594,18 @@
       <img
         src={imageSrc}
         alt=""
-        class="size-6 shrink-0 object-contain"
+        class={REWARD_CHIP_ICON_CLASS}
         loading="lazy"
         decoding="async"
         onerror={hideBrokenImage}
       />
     {:else}
-      <Icon
-        icon={getRewardDetailFallbackIcon(detail)}
-        class="size-4 shrink-0 opacity-70"
-        aria-hidden="true"
-      />
+      <span class="grid {REWARD_CHIP_ICON_CLASS} place-items-center" aria-hidden="true">
+        <Icon icon={getRewardDetailFallbackIcon(detail)} class="size-6 opacity-70" />
+      </span>
     {/if}
     {#if getRewardDetailQuantity(detail)}
-      <span class="shrink-0 text-primary">×{getRewardDetailQuantity(detail)}</span>
+      <span class={REWARD_CHIP_QUANTITY_CLASS}>×{getRewardDetailQuantity(detail)}</span>
     {/if}
   </span>
 {/snippet}

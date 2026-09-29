@@ -3,6 +3,12 @@
   import type { SupportedRegion } from "$lib/domain/regions";
   import { getRewardItemIcon } from "$lib/domain/reward-item";
   import { titlePreviewKindOf } from "$lib/domain/title-preview";
+  import {
+    REWARD_CHIP_BUTTON_CLASS,
+    REWARD_CHIP_CLASS,
+    REWARD_CHIP_ICON_CLASS,
+    REWARD_CHIP_QUANTITY_CLASS
+  } from "$lib/styles/reward-chip";
   import TitlePreviewDialog from "./TitlePreviewDialog.svelte";
 
   let {
@@ -24,7 +30,7 @@
     label: string;
     /** Already formatted, for example "×100". */
     quantityLabel?: string | null;
-    /** `lg` suits standalone totals; `md` suits reward rows. */
+    /** `md` frames the item as a reward chip for reward rows; `lg` suits standalone totals. */
     size?: "md" | "lg";
     /** A title reward opens its preview; off for totals that sum several titles. */
     preview?: boolean;
@@ -54,21 +60,22 @@
   );
   let titlePreview: TitlePreviewDialog | null = $state(null);
   const accessibleLabel = $derived(quantityLabel ? `${label} ${quantityLabel}` : label);
+  const chip = $derived(size === "md");
 </script>
 
 {#snippet iconImage()}
   <img
     src={src ?? undefined}
     alt=""
-    class="shrink-0 object-contain {size === 'lg' ? 'size-14' : 'size-12'}"
+    class={chip ? REWARD_CHIP_ICON_CLASS : "size-14 shrink-0 object-contain"}
     loading="lazy"
     decoding="async"
     onerror={() => (failures += 1)}
   />
   {#if quantityLabel}<span
-      class="tabular-nums {size === 'lg'
-        ? 'text-lg font-semibold text-(--archive-text-strong)'
-        : ''}"
+      class={chip
+        ? REWARD_CHIP_QUANTITY_CLASS
+        : "text-lg font-semibold text-(--archive-text-strong) tabular-nums"}
       aria-hidden="true">{quantityLabel}</span
     >{/if}
 {/snippet}
@@ -76,7 +83,9 @@
 {#if titleKind && detail.resourceId !== null}
   <button
     type="button"
-    class="btn btn-ghost touch-target tooltip h-auto min-h-0 gap-1 p-0.5 align-middle font-normal {className}"
+    class="tooltip align-middle {chip
+      ? REWARD_CHIP_BUTTON_CLASS
+      : 'btn btn-ghost h-auto min-h-0 gap-1 p-0.5 font-normal'} {className}"
     data-tip={label}
     aria-label={accessibleLabel}
     aria-haspopup="dialog"
@@ -86,7 +95,9 @@
       {@render iconImage()}
     {:else}
       <span class="min-w-0 wrap-anywhere">{label}</span>
-      {#if quantityLabel}<span class="shrink-0 tabular-nums">{quantityLabel}</span>{/if}
+      {#if quantityLabel}<span class={chip ? REWARD_CHIP_QUANTITY_CLASS : "shrink-0 tabular-nums"}
+          >{quantityLabel}</span
+        >{/if}
     {/if}
   </button>
   <TitlePreviewDialog
@@ -101,7 +112,9 @@
   <!-- A game-asset icon may stand alone (DESIGN.md, Focus and accessibility): the tooltip
        and the accessible label carry the item's name. -->
   <span
-    class="tooltip inline-flex shrink-0 items-center gap-1 align-middle {className}"
+    class="tooltip inline-flex shrink-0 items-center align-middle {chip
+      ? REWARD_CHIP_CLASS
+      : 'gap-1'} {className}"
     data-tip={label}
     role="img"
     aria-label={accessibleLabel}
@@ -109,8 +122,14 @@
     {@render iconImage()}
   </span>
 {:else}
-  <span class="inline-flex min-w-0 items-center gap-1.5 align-middle {className}">
+  <span
+    class="inline-flex min-w-0 items-center align-middle {chip
+      ? REWARD_CHIP_CLASS
+      : 'gap-1.5'} {className}"
+  >
     <span class="min-w-0 wrap-anywhere">{label}</span>
-    {#if quantityLabel}<span class="shrink-0 tabular-nums">{quantityLabel}</span>{/if}
+    {#if quantityLabel}<span class={chip ? REWARD_CHIP_QUANTITY_CLASS : "shrink-0 tabular-nums"}
+        >{quantityLabel}</span
+      >{/if}
   </span>
 {/if}

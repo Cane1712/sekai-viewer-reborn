@@ -34,6 +34,11 @@
   import { createPageTitle } from "$lib/page-title";
   import type { PageData } from "./$types";
   import { DETAIL_MEDIA_BUTTON_CLASS, DETAIL_MEDIA_RADIUS_CLASS } from "$lib/styles/detail-media";
+  import {
+    REWARD_CHIP_CLASS,
+    REWARD_CHIP_ICON_CLASS,
+    REWARD_CHIP_QUANTITY_CLASS
+  } from "$lib/styles/reward-chip";
 
   let { data }: { data: PageData } = $props();
   const getInitialMessages = (): Record<string, string> =>
@@ -214,7 +219,7 @@
     />
   {:else}
     <span
-      class="badge badge-outline h-auto min-h-9 max-w-full gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
+      class={REWARD_CHIP_CLASS}
       title={getRewardDetailLabel(detail)}
       aria-label={getRewardDetailLabel(detail)}
     >
@@ -222,20 +227,18 @@
         <img
           src={imageSrc}
           alt=""
-          class="size-6 shrink-0 object-contain"
+          class={REWARD_CHIP_ICON_CLASS}
           loading="lazy"
           decoding="async"
           onerror={hideBrokenImage}
         />
       {:else}
-        <Icon
-          icon={getRewardDetailFallbackIcon(detail)}
-          class="size-4 shrink-0 opacity-70"
-          aria-hidden="true"
-        />
+        <span class="grid {REWARD_CHIP_ICON_CLASS} place-items-center" aria-hidden="true">
+          <Icon icon={getRewardDetailFallbackIcon(detail)} class="size-6 opacity-70" />
+        </span>
       {/if}
       {#if quantity}
-        <span class="shrink-0 text-primary">×{quantity}</span>
+        <span class={REWARD_CHIP_QUANTITY_CLASS}>×{quantity}</span>
       {/if}
     </span>
   {/if}

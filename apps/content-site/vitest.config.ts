@@ -110,6 +110,7 @@ export default defineConfig({
         "src/lib/domain/unit-detail.ts",
         "src/lib/domain/unit-icon.ts",
         "src/lib/styles/event-card.ts",
+        "src/lib/styles/reward-chip.ts",
         "src/routes/api/gacha/[region]/[id]/pull/+server.ts",
         "src/routes/api/home/[region]/+server.ts",
         "src/routes/api/gacha/[region]/[id]/pull/pull-behavior.ts",
