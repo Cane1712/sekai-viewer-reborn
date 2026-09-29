@@ -86,6 +86,7 @@
   "noCurrentEventData": "No current event data.",
   "pure": "Pure",
   "rarityLabel": "Rarity",
+  "titlePreview.condition": "Condition",
   "titlePreview.dialog": "Title preview",
   "titlePreview.error": "The title could not be loaded.",
   "titlePreview.levels": "Levels",

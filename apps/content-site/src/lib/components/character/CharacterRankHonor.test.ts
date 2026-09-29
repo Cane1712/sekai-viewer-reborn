@@ -97,12 +97,15 @@ describe("CharacterRankCard title rewards", () => {
       .find((node) => (node as HTMLDialogElement).open)!;
     expect(await within(dialog).findByRole("img", { name: "Ichika fan" })).toBeTruthy();
     expect(within(dialog).getByText("Low")).toBeTruthy();
-    const rewarded = within(dialog).getByText("Level 2").closest("li");
+    const rewarded = within(dialog).getByRole("rowheader", { name: "2" }).closest("tr");
     expect(rewarded?.getAttribute("aria-current")).toBe("true");
     expect(rewarded?.textContent).toContain("Reach character rank 10");
-    expect(within(dialog).getByText("Level 1").closest("li")?.hasAttribute("aria-current")).toBe(
-      false
-    );
+    expect(
+      within(dialog)
+        .getByRole("rowheader", { name: "1" })
+        .closest("tr")
+        ?.hasAttribute("aria-current")
+    ).toBe(false);
   });
 
   it("names a title reward by its type when the API gives no name", async () => {

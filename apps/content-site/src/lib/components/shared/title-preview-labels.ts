@@ -10,6 +10,7 @@ export type TitlePreviewLabels = {
   rarity: string;
   levels: string;
   level: string;
+  condition: string;
   imageUnavailable: string;
   rarities: Record<string, string>;
 };
@@ -23,6 +24,7 @@ export const defaultTitlePreviewLabels: TitlePreviewLabels = {
   rarity: "Rarity",
   levels: "Levels",
   level: "Level",
+  condition: "Condition",
   imageUnavailable: "Image unavailable",
   rarities: { low: "Low", middle: "Middle", high: "High", highest: "Highest" }
 };

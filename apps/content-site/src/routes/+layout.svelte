@@ -113,6 +113,7 @@
     rarity: text("rarityLabel"),
     levels: text("titlePreview.levels"),
     level: text("levelLabel"),
+    condition: text("titlePreview.condition"),
     imageUnavailable: text("imageUnavailable"),
     rarities: {
       low: text("titlePreview.rarity.low"),
