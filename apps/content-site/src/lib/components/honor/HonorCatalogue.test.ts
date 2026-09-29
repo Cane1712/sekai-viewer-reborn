@@ -376,7 +376,7 @@ describe("HonorCatalogue", () => {
     const search = deck?.querySelector('[role="search"]');
     expect(search?.parentElement).toBe(deck);
     expect(search?.classList).toContain("sm:max-w-md");
-    expect(search?.querySelector("span.flex")?.classList).not.toContain("flex-wrap");
+    expect(search?.querySelector("div.flex")?.classList).not.toContain("flex-wrap");
     const controlsRow = deck?.querySelector('[role="tablist"]')?.parentElement?.parentElement;
     expect(controlsRow?.parentElement).toBe(deck);
     expect(controlsRow?.classList).toContain("lg:flex-row");

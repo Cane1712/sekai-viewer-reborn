@@ -61,6 +61,12 @@
 
   const searchInput = $state({ value: untrack(() => query) });
 
+  // Emptying the field, by deleting the text or with its clear button, drops an applied
+  // search at once, so the URL never keeps a search the field no longer shows.
+  const clearAppliedSearchIfEmpty = (event: Event & { currentTarget: HTMLInputElement }): void => {
+    if (event.currentTarget.value.trim() === "" && query !== "") onSearch?.("");
+  };
+
   // Only query and reset-key changes reset the draft; typing does not retrigger this effect.
   $effect(() => {
     void resetKey;
@@ -88,23 +94,25 @@
             onSearch?.(searchInput.value.trim());
           }}
         >
-          <label class="flex flex-col gap-2 text-sm font-semibold">
-            <span>{labels.search}</span>
-            <span class="flex gap-2">
-              <input
-                type="search"
-                class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
-                bind:value={searchInput.value}
-              />
-              <button
-                type="submit"
-                class="btn touch-target shrink-0"
-                disabled={status === "loading"}
-              >
-                <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
-              </button>
-            </span>
-          </label>
+          <div class="flex gap-2">
+            <input
+              type="search"
+              class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
+              bind:value={searchInput.value}
+              placeholder={labels.search}
+              oninput={clearAppliedSearchIfEmpty}
+              aria-label={labels.search}
+            />
+            <button
+              type="submit"
+              class="btn btn-square touch-target size-11 shrink-0"
+              aria-label={labels.searchAction}
+              title={labels.searchAction}
+              disabled={status === "loading"}
+            >
+              <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />
+            </button>
+          </div>
         </form>
       {/if}
       <div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -120,19 +128,25 @@
         onSearch?.(searchInput.value.trim());
       }}
     >
-      <label class="flex flex-col gap-2 text-sm font-semibold">
-        <span>{labels.search}</span>
-        <span class="flex gap-2">
-          <input
-            type="search"
-            class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
-            bind:value={searchInput.value}
-          />
-          <button type="submit" class="btn touch-target shrink-0" disabled={status === "loading"}>
-            <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
-          </button>
-        </span>
-      </label>
+      <div class="flex gap-2">
+        <input
+          type="search"
+          class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
+          bind:value={searchInput.value}
+          placeholder={labels.search}
+          oninput={clearAppliedSearchIfEmpty}
+          aria-label={labels.search}
+        />
+        <button
+          type="submit"
+          class="btn btn-square touch-target size-11 shrink-0"
+          aria-label={labels.searchAction}
+          title={labels.searchAction}
+          disabled={status === "loading"}
+        >
+          <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />
+        </button>
+      </div>
     </form>
   {/if}
 

@@ -203,7 +203,11 @@ describe("Honors page group contract", () => {
     expect(within(dialog).getByText("Requirement 9")).toBeTruthy();
     expect(within(dialog).getByText("Requirement 2")).toBeTruthy();
     const search = screen.getByRole("search");
-    await fireEvent.input(within(search).getByRole("searchbox"), { target: { value: "stage" } });
+    // No visible heading: the field is named by aria-label and shows the same placeholder.
+    const searchbox = within(search).getByRole("searchbox", { name: "Search titles" });
+    expect(searchbox.getAttribute("placeholder")).toBe("Search titles");
+    expect(within(search).queryByText("Search titles")).toBeNull();
+    await fireEvent.input(searchbox, { target: { value: "stage" } });
     await fireEvent.submit(search);
     expect(goto).toHaveBeenLastCalledWith("/honors/jp?name=stage&sort_by=id&sort_order=asc", {
       keepFocus: true,
@@ -273,6 +277,27 @@ describe("Honors page group contract", () => {
       "/honors/jp?honor_type=event&sort_by=id&sort_order=desc",
       { keepFocus: true, noScroll: true }
     );
+  });
+
+  it("searches with an icon button and drops the search when the field is emptied", async () => {
+    const searched = data(result);
+    render(HonorsPage, {
+      data: { ...searched, query: { ...searched.query, name: "Stage" } },
+      params: { region: "jp" },
+      form: null
+    });
+    const search = await screen.findByRole("search");
+    const button = within(search).getByRole("button", { name: "Search" });
+    expect(button.textContent?.trim()).toBe("");
+    const searchbox = within(search).getByRole("searchbox", { name: "Search titles" });
+
+    await fireEvent.input(searchbox, { target: { value: "Stag" } });
+    expect(goto).not.toHaveBeenCalled();
+    await fireEvent.input(searchbox, { target: { value: "" } });
+    expect(goto).toHaveBeenLastCalledWith("/honors/jp?sort_by=id&sort_order=asc", {
+      keepFocus: true,
+      noScroll: true
+    });
   });
 
   it("clears the search when the category changes", async () => {
