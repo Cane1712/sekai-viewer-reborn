@@ -1,5 +1,11 @@
 /* Shared Prismatic Archive utilities. Import after tailwindcss in each app's app.css. */
 
+/* color.surface.assetBackdrop: game artwork such as unit icons is drawn for a light
+   ground, so its backdrop stays white in every palette and in dark mode. */
+:root {
+  --archive-surface-asset-backdrop: #ffffff;
+}
+
 /* Keep the visible control at its daisyUI size but give it a 44px hit area
    (DESIGN.md §3 asks for a touch-safe interactive box, not a large control).
    Only for elements that render pseudo-elements (button, a, summary), and
