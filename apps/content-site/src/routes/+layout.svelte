@@ -33,6 +33,10 @@
     resolvePreferredRegion,
     UI_LOCALE_COOKIE_NAME
   } from "$lib/i18n/region";
+  import {
+    setTitlePreviewLabels,
+    type TitlePreviewLabels
+  } from "$lib/components/shared/title-preview-labels";
   import type { LayoutData } from "./$types";
 
   type ThemeMode = "light" | "dark" | "auto";
@@ -99,6 +103,26 @@
   let virtualLivesLabel = $state(getInitialI18nText("navigation.virtualLives"));
   let missionsLabel = $state(getInitialI18nText("navigation.missions"));
   let honorsLabel = $state(getInitialI18nText("navigation.honors"));
+  // Any reward list can open a title preview, so the layout provides its labels.
+  const titlePreviewLabelsFrom = (text: (key: string) => string): TitlePreviewLabels => ({
+    dialog: text("titlePreview.dialog"),
+    close: text("closeLabel"),
+    loading: text("detailLoading"),
+    error: text("titlePreview.error"),
+    retry: text("listRetry"),
+    rarity: text("rarityLabel"),
+    levels: text("titlePreview.levels"),
+    level: text("levelLabel"),
+    imageUnavailable: text("imageUnavailable"),
+    rarities: {
+      low: text("titlePreview.rarity.low"),
+      middle: text("titlePreview.rarity.middle"),
+      high: text("titlePreview.rarity.high"),
+      highest: text("titlePreview.rarity.highest")
+    }
+  });
+  let titlePreviewLabels = $state(titlePreviewLabelsFrom(getInitialI18nText));
+  setTitlePreviewLabels(() => titlePreviewLabels);
   let supportLabel = $state(getInitialI18nText("navigation.support"));
   let quickNavigationLabel = $state(getInitialI18nText("navigation.quickNavigation"));
   let settingsLabel = $state(getInitialI18nText("settings.title"));
@@ -381,6 +405,7 @@
     virtualLivesLabel = translate("navigation.virtualLives");
     missionsLabel = translate("navigation.missions");
     honorsLabel = translate("navigation.honors");
+    titlePreviewLabels = titlePreviewLabelsFrom(translate);
     supportLabel = translate("navigation.support");
     quickNavigationLabel = translate("navigation.quickNavigation");
     settingsLabel = translate("settings.title");

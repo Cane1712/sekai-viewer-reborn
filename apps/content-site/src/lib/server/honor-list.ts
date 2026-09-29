@@ -1,7 +1,6 @@
 import {
   getBondsHonorsByRegionList,
   getHonorGroupsByRegionList,
-  getHonorsByRegionById,
   type GetHonorGroupsByRegionListData
 } from "@platform/sekai-master-api-sdk";
 import type {
@@ -419,30 +418,4 @@ const fetchBondsHonorListPage = async (
       sourceHonors.length
     )
   };
-};
-
-/**
- * Loads honors by ID for rendering reward honors. Each honor is fetched on its own;
- * one that cannot be loaded is left out, so its reward falls back to text.
- */
-export const fetchHonorsByIds = async (
-  baseUrl: string,
-  region: string,
-  ids: Iterable<number>
-): Promise<Record<number, Honor>> => {
-  const entries = await Promise.all(
-    [...new Set(ids)].map(async (id) => {
-      try {
-        const response = await getHonorsByRegionById({
-          baseUrl: getMasterApiV1BaseUrl(baseUrl),
-          path: { region, id }
-        });
-        const honor = response.error ? null : parseHonor(response.data);
-        return honor ? ([id, honor] as const) : null;
-      } catch {
-        return null;
-      }
-    })
-  );
-  return Object.fromEntries(entries.filter((entry) => entry !== null));
 };

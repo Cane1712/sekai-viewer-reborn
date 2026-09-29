@@ -10,6 +10,8 @@
     type AssetServer
   } from "$lib/assets/index";
   import AssetImage from "$lib/components/shared/AssetImage.svelte";
+  import RewardItem from "$lib/components/shared/RewardItem.svelte";
+  import { isTitleReward } from "$lib/domain/reward-item";
   import VirtualLiveScheduleSwitcher from "$lib/components/virtual-live/VirtualLiveScheduleSwitcher.svelte";
   import VirtualLiveCharacterGrid from "$lib/components/virtual-live/VirtualLiveCharacterGrid.svelte";
   import VirtualLiveSetlistSummary from "$lib/components/virtual-live/VirtualLiveSetlistSummary.svelte";
@@ -202,31 +204,41 @@
 {#snippet rewardDetailChip(detail: VirtualLiveRewardResourceBoxDetail)}
   {@const imageSrc = getRewardDetailImageSrc(detail)}
   {@const quantity = formatNumber(detail.resourceQuantity)}
-  <span
-    class="badge badge-outline h-auto min-h-9 max-w-full gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
-    title={getRewardDetailLabel(detail)}
-    aria-label={getRewardDetailLabel(detail)}
-  >
-    {#if imageSrc}
-      <img
-        src={imageSrc}
-        alt=""
-        class="size-6 shrink-0 object-contain"
-        loading="lazy"
-        decoding="async"
-        onerror={hideBrokenImage}
-      />
-    {:else}
-      <Icon
-        icon={getRewardDetailFallbackIcon(detail)}
-        class="size-4 shrink-0 opacity-70"
-        aria-hidden="true"
-      />
-    {/if}
-    {#if quantity}
-      <span class="shrink-0 text-primary">×{quantity}</span>
-    {/if}
-  </span>
+  {#if isTitleReward(detail.resourceType)}
+    <!-- Title rewards show the in-game title icon; it opens a preview of the title. -->
+    <RewardItem
+      {detail}
+      region={data.region}
+      label={detail.resourceName ?? getRewardDetailLabel(detail)}
+      quantityLabel={quantity ? `×${quantity}` : null}
+    />
+  {:else}
+    <span
+      class="badge badge-outline h-auto min-h-9 max-w-full gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
+      title={getRewardDetailLabel(detail)}
+      aria-label={getRewardDetailLabel(detail)}
+    >
+      {#if imageSrc}
+        <img
+          src={imageSrc}
+          alt=""
+          class="size-6 shrink-0 object-contain"
+          loading="lazy"
+          decoding="async"
+          onerror={hideBrokenImage}
+        />
+      {:else}
+        <Icon
+          icon={getRewardDetailFallbackIcon(detail)}
+          class="size-4 shrink-0 opacity-70"
+          aria-hidden="true"
+        />
+      {/if}
+      {#if quantity}
+        <span class="shrink-0 text-primary">×{quantity}</span>
+      {/if}
+    </span>
+  {/if}
 {/snippet}
 
 <svelte:head>

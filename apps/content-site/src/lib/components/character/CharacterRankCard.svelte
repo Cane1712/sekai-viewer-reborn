@@ -7,9 +7,7 @@
     summarizeCharacterRanks,
     type CharacterRankSummary
   } from "$lib/domain/character-growth";
-  import type { Honor } from "$lib/domain/honor";
-  import type { CharacterRankReference, MissionResourceBoxDetail } from "$lib/domain/mission";
-  import { createHonorDegreeAssetResolver, toCatalogueHonorDegree } from "$lib/honor-degree";
+  import type { CharacterRankReference } from "$lib/domain/mission";
 
   let {
     ranks,
@@ -17,11 +15,7 @@
     locale,
     t
   }: {
-    ranks: Promise<{
-      items: CharacterRankReference[];
-      honors?: Record<number, Honor>;
-      loadFailed: boolean;
-    }>;
+    ranks: Promise<{ items: CharacterRankReference[]; loadFailed: boolean }>;
     region: SupportedRegion;
     locale: string;
     t: (key: string, fallback: string) => string;
@@ -51,38 +45,6 @@
         return t("characterRankReward", "Reward");
     }
   };
-  const resolveHonorAsset = $derived(createHonorDegreeAssetResolver(region));
-  // Rank rewards name an honor and the level it reaches; show that level's small degree.
-  const honorDegreeOf =
-    (honors: Record<number, Honor> = {}) =>
-    (detail: MissionResourceBoxDetail) => {
-      if (detail.resourceType !== "honor" || detail.resourceId === null) return null;
-      const honor = honors[detail.resourceId];
-      if (!honor) return null;
-      const level = detail.resourceLevel;
-      const leveled =
-        level === null
-          ? honor
-          : { ...honor, levels: honor.levels.filter((item) => item.level === level) };
-      const group = honor.group ?? {
-        id: honor.groupId,
-        name: null,
-        honorType: honor.honorType,
-        backgroundAssetBundleName: null,
-        frameName: null
-      };
-      const name = honor.name ?? resourceLabel("honor");
-      return {
-        honor: toCatalogueHonorDegree(leveled, group).sub,
-        resolveAsset: resolveHonorAsset,
-        label:
-          level === null
-            ? name
-            : t("characterRankHonorLevel", "{name} Lv.{level}")
-                .replace("{name}", name)
-                .replace("{level}", formatNumber(level))
-      };
-    };
   const rankLabel = (rank: number | null): string =>
     t("characterRankLabel", "Rank {rank}").replace("{rank}", formatNumber(rank ?? 0));
   const headerLabel = (summary: CharacterRankSummary): string =>
@@ -173,7 +135,6 @@
                 )}
           getDetails={getCharacterRankRewardDetails}
           {resourceLabel}
-          honorDegree={honorDegreeOf(result.honors)}
           labels={{
             totals: t("characterRankTotalsLabel", "Rewards across all ranks"),
             milestones: t("characterRankMilestonesTitle", "Milestone ranks"),

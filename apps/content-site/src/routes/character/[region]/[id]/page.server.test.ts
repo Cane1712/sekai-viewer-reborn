@@ -15,7 +15,6 @@ const mocks = vi.hoisted(() => ({
   aggregateGameCharacterUnitsByRegion: vi.fn(),
   fetchCharacterRankReferences: vi.fn(),
   fetchCharacterMissions: vi.fn(),
-  fetchHonorsByIds: vi.fn(),
   fetchUnitProfiles: vi.fn(),
   getUnitName: vi.fn(),
   toUnitProfileMap: vi.fn()
@@ -47,7 +46,6 @@ vi.mock("$lib/server/mission-list", () => ({
   fetchCharacterRankReferences: mocks.fetchCharacterRankReferences,
   fetchCharacterMissions: mocks.fetchCharacterMissions
 }));
-vi.mock("$lib/server/honor-list", () => ({ fetchHonorsByIds: mocks.fetchHonorsByIds }));
 vi.mock("$lib/server/unit-profiles", () => ({
   fetchUnitProfiles: mocks.fetchUnitProfiles,
   getUnitName: mocks.getUnitName,
@@ -81,9 +79,6 @@ describe("character detail page load", () => {
     mocks.aggregateGameCharacterUnitsByRegion.mockResolvedValue({ loadFailed: true, data: null });
     mocks.fetchCharacterRankReferences.mockResolvedValue([]);
     mocks.fetchCharacterMissions.mockResolvedValue([]);
-    mocks.fetchHonorsByIds.mockImplementation((_baseUrl: string, _region: string, ids: number[]) =>
-      Promise.resolve(Object.fromEntries(ids.map((id) => [id, { id, name: "Ichika fan" }])))
-    );
     mocks.fetchUnitProfiles.mockResolvedValue([]);
     mocks.toUnitProfileMap.mockReturnValue(new Map());
     mocks.getUnitName.mockReturnValue(null);
@@ -99,7 +94,6 @@ describe("character detail page load", () => {
     await expect(result.payload).resolves.toEqual({ character: null, loadFailed: false });
     await expect(result.characterRanks).resolves.toEqual({
       items: [],
-      honors: {},
       loadFailed: false
     });
     await expect(result.characterMissions).resolves.toEqual({ items: [], loadFailed: false });
@@ -150,10 +144,8 @@ describe("character detail page load", () => {
     await expect(result.payload).resolves.toMatchObject({ loadFailed: false });
     await expect(result.characterRanks).resolves.toMatchObject({
       loadFailed: false,
-      items: [{ characterRank: 1 }],
-      honors: { 4: { id: 4, name: "Ichika fan" } }
+      items: [{ characterRank: 1 }]
     });
-    expect(mocks.fetchHonorsByIds).toHaveBeenCalledWith("https://master-api.test", "jp", [4]);
     expect(mocks.fetchCharacterRankReferences).toHaveBeenCalledWith(
       "https://master-api.test",
       "jp",
@@ -175,7 +167,6 @@ describe("character detail page load", () => {
     });
     await expect(result.characterRanks).resolves.toEqual({
       items: [],
-      honors: {},
       loadFailed: true
     });
   });

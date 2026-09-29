@@ -43,8 +43,25 @@ describe("getRewardItemIcon", () => {
     expect(getRewardItemIcon(item("material", 13), "jp")?.fallbackSrc).toBeNull();
   });
 
+  it("shows a title reward as the common_material icon of its rarity", () => {
+    const title = (resourceType: string, resourceRarity: string | null) => ({
+      ...item(resourceType, 1),
+      resourceRarity
+    });
+    expect(getRewardItemIcon(title("honor", "low"), "jp")?.src).toMatch(
+      /sekai-jp-assets\/thumbnail\/common_material\/honor_1\.webp$/
+    );
+    expect(getRewardItemIcon(title("honor", "highest"), "en")?.src).toMatch(
+      /sekai-en-assets\/thumbnail\/common_material\/honor_4\.webp$/
+    );
+    expect(getRewardItemIcon(title("bonds_honor", "high"), "jp")?.src).toMatch(
+      /thumbnail\/common_material\/honor_3\.webp$/
+    );
+    // An unknown rarity falls back to the plain icon.
+    expect(getRewardItemIcon(title("honor", null), "jp")?.src).toMatch(/honor_1\.webp$/);
+  });
+
   it("returns null for items without a known icon path", () => {
-    expect(getRewardItemIcon(item("honor", 1), "jp")).toBeNull();
     expect(getRewardItemIcon(item("material"), "jp")).toBeNull();
     expect(getRewardItemIcon({ resourceType: null, resourceId: null }, "jp")).toBeNull();
   });

@@ -560,10 +560,16 @@ export type SharedEventRewardResourceBoxDetail = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, and titles (honors and
+     * Kizuna titles).
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };
@@ -919,10 +925,16 @@ export type SharedMissionResourceBoxDetailResponse = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, and titles (honors and
+     * Kizuna titles).
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };
@@ -1323,10 +1335,16 @@ export type SharedVirtualLiveRewardResourceBoxDetail = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, and titles (honors and
+     * Kizuna titles).
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };

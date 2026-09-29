@@ -13,6 +13,13 @@ export type RewardItemIcon = {
   fallbackSrc: string | null;
 };
 
+// Title rewards show `thumbnail/common_material/honor_{n}`, one icon per rarity
+// (plain, laurel, flowers, sparkles). Unknown rarities fall back to the plain one.
+const titleRarityIcons: Record<string, number> = { low: 1, middle: 2, high: 3, highest: 4 };
+
+export const isTitleReward = (resourceType: string | null | undefined): boolean =>
+  resourceType === "honor" || resourceType === "bonds_honor";
+
 // Currencies whose icon is `thumbnail/common_material/{resourceType}.webp`.
 const commonMaterialTypes = new Set([
   "coin",
@@ -28,13 +35,20 @@ const commonMaterialTypes = new Set([
  * CommonMaterialIcon / MaterialIcon paths. Items without a known path return null.
  */
 export const getRewardItemIcon = (
-  detail: Pick<MissionResourceBoxDetail, "resourceType" | "resourceId" | "resourceAssetbundleName">,
+  detail: Pick<
+    MissionResourceBoxDetail,
+    "resourceType" | "resourceId" | "resourceAssetbundleName" | "resourceRarity"
+  >,
   region: SupportedRegion
 ): RewardItemIcon | null => {
   const server: AssetServer = region;
   const { resourceType: type, resourceId: id } = detail;
   if (!type) return null;
 
+  if (isTitleReward(type)) {
+    const icon = titleRarityIcons[detail.resourceRarity ?? ""] ?? 1;
+    return { src: getCommonMaterialThumbnailURL(`honor_${icon}`, server), fallbackSrc: null };
+  }
   if (commonMaterialTypes.has(type)) {
     return { src: getCommonMaterialThumbnailURL(type, server), fallbackSrc: null };
   }
