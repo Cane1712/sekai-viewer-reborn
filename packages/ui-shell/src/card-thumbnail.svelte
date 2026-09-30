@@ -1,11 +1,11 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
   import { onDestroy } from "svelte";
-  import attrCoolUrl from "./assets/card-icons/icon_attribute_cool_88.png";
-  import attrCuteUrl from "./assets/card-icons/icon_attribute_cute_88.png";
-  import attrHappyUrl from "./assets/card-icons/icon_attribute_happy_88.png";
-  import attrMysteriousUrl from "./assets/card-icons/icon_attribute_mysterious_88.png";
-  import attrPureUrl from "./assets/card-icons/icon_attribute_pure_88.png";
+  import attrCoolUrl from "./assets/card-icons/icon_attribute_cool_64.png";
+  import attrCuteUrl from "./assets/card-icons/icon_attribute_cute_64.png";
+  import attrHappyUrl from "./assets/card-icons/icon_attribute_happy_64.png";
+  import attrMysteriousUrl from "./assets/card-icons/icon_attribute_mysterious_64.png";
+  import attrPureUrl from "./assets/card-icons/icon_attribute_pure_64.png";
   import rarityBirthdayUrl from "./assets/card-icons/rarity_birthday.png";
   import rarityStarAfterTrainingUrl from "./assets/card-icons/rarity_star_afterTraining.png";
   import rarityStarNormalUrl from "./assets/card-icons/rarity_star_normal.png";
@@ -220,7 +220,7 @@
       aria-hidden="true"
     >
       {#if attrIconUrl}
-        <image href={attrIconUrl} x="71" y="0" width="29" height="29" class="drop-shadow" />
+        <image href={attrIconUrl} x="0" y="0" width="29" height="29" class="drop-shadow" />
       {/if}
       {#if rarityIconUrl && resolvedRarityCount > 0}
         {#each Array.from(Array(resolvedRarityCount).keys()) as index (`card-thumbnail-rarity-${trained}-${index}`)}
