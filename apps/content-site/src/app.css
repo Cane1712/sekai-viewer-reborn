@@ -710,10 +710,27 @@ body {
     }
   }
 
+  /* Same frosted glass as the ui-shell top navigation bar (viewer-shell.svelte). */
   @supports (backdrop-filter: blur(1px)) {
     .content-site-quick-nav {
-      backdrop-filter: blur(12px) saturate(140%);
-      -webkit-backdrop-filter: blur(12px) saturate(140%);
+      border-color: color-mix(in oklab, var(--color-base-100) 75%, transparent);
+      background-color: color-mix(in oklab, var(--color-base-100) 62%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--color-base-100) 90%, transparent),
+        inset 0 -1px 0 color-mix(in oklab, var(--color-base-content) 6%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--color-base-content) 8%, transparent),
+        0 6px 20px color-mix(in oklab, var(--color-base-content) 9%, transparent);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+    }
+
+    :root.dark .content-site-quick-nav {
+      border-color: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--color-base-content) 18%, transparent),
+        inset 0 -1px 0 color-mix(in oklab, var(--color-base-100) 40%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--color-base-100) 50%, transparent),
+        0 6px 20px color-mix(in oklab, var(--color-base-300) 70%, transparent);
     }
   }
 
@@ -728,13 +745,16 @@ body {
   }
 
   :root[data-low-motion] .content-site-quick-nav {
+    background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .content-site-quick-nav {
+    .content-site-quick-nav,
+    :root.dark .content-site-quick-nav {
+      background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
       box-shadow: none;
