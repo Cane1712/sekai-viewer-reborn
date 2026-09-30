@@ -166,7 +166,7 @@ overrides:
   cookie: 0.7.2
   esbuild: 0.28.2
   brace-expansion: 5.0.12
-  '@microsoft/api-extractor': 7.59.2
+  '@microsoft/api-extractor': 7.59.3
   fast-uri: 4.2.1
   postcss: 8.5.28
   nanoid: 6.0.1
@@ -2269,6 +2269,11 @@ packages:
 
   '@volar/typescript@2.4.28':
     resolution: {integrity: sha512-Ja6yvWrbis2QtN4ClAKreeUZPVYMARDYZl9LMEv1iQ1QdepB6wn0jTRxA9MftYmYa4DQ4k/DaSZpFPUfxl8giw==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -3778,7 +3783,7 @@ packages:
   unplugin-dts@1.1.1:
     resolution: {integrity: sha512-Z2VcabC0hjYuzF62oWmZXVoxagkM8bUWgqUy+dotoJTPnooR5mNaxbpv63JCmcaxdGCW2Bb75omK6FOryOYCRg==}
     peerDependencies:
-      '@microsoft/api-extractor': 7.59.2
+      '@microsoft/api-extractor': 7.59.3
       '@rspack/core': ^1
       '@vue/language-core': ^3.1.5
       esbuild: 0.28.2
@@ -3830,7 +3835,7 @@ packages:
   vite-plugin-dts@5.1.1:
     resolution: {integrity: sha512-U5dyX3DPFvHB+gaJIULn90kKGsXNYllyJ3vn491Y+LGu2nL5Fb8z7YgurN/Pi6ZFlnGljh2wSM0ZbFogSh4yAg==}
     peerDependencies:
-      '@microsoft/api-extractor': 7.59.2
+      '@microsoft/api-extractor': 7.59.3
       rollup: '>=3'
       vite: '>=3'
     peerDependenciesMeta:
@@ -5447,11 +5452,13 @@ snapshots:
 
   '@volar/source-map@2.4.28': {}
 
-  '@volar/typescript@2.4.28':
+  '@volar/typescript@2.4.28(typescript@6.0.3)':
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
       vscode-uri: 3.2.0
+    optionalDependencies:
+      typescript: 6.0.3
 
   acorn-jsx@5.3.2(acorn@8.18.0):
     dependencies:
@@ -7031,7 +7038,7 @@ snapshots:
   unplugin-dts@1.1.1(esbuild@0.28.2)(rolldown@1.2.8)(rollup@4.62.2)(supports-color@7.2.0)(typescript@6.0.3)(vite@8.3.1(@types/node@25.9.8)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.0)):
     dependencies:
       '@rollup/pluginutils': 5.4.0(rollup@4.62.2)
-      '@volar/typescript': 2.4.28
+      '@volar/typescript': 2.4.28(typescript@6.0.3)
       compare-versions: 6.1.1
       debug: 4.4.3(supports-color@7.2.0)
       glob-to-regexp: 0.4.1
