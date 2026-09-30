@@ -49,6 +49,14 @@ body {
   @apply mx-auto flex w-full flex-col px-2;
 }
 
+/* Music difficulty colors on a daisyUI badge. As a utility it outranks the badge's own
+   background and text color, which sit in daisyUI's nested utility layers; the
+   music-difficulty-* classes below only set the two variables. */
+@utility music-difficulty-badge {
+  color: var(--music-difficulty-foreground, var(--color-base-content));
+  background-color: var(--music-difficulty-background, var(--color-base-300));
+}
+
 /* Fine-pointer hover lift that is dropped under the site low-motion setting
    and prefers-reduced-motion (DESIGN.md §6). Pair with a transform transition. */
 @layer utilities {
@@ -498,11 +506,6 @@ body {
 
   .event-list-spoiler-mosaic-overlay {
     background-color: color-mix(in oklab, white 42%, transparent);
-  }
-
-  .music-difficulty-badge {
-    color: var(--music-difficulty-foreground);
-    background-color: var(--music-difficulty-background);
   }
 
   .music-difficulty-easy {
