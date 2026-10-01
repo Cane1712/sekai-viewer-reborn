@@ -22,7 +22,7 @@ describe("stamp list requests", () => {
     });
     expect(
       createStampListRequestQuery(
-        query("name=hi&category=bond&character=1&second=2&sort_order=desc"),
+        query("name=hi&category=bond&source=shop&character=1&second=2&sort_order=desc"),
         3
       )
     ).toEqual({
@@ -32,6 +32,7 @@ describe("stamp list requests", () => {
       sort_order: "desc",
       name: "hi",
       category: "bond",
+      source: "shop",
       character_id: "1,2"
     });
   });

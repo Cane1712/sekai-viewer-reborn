@@ -6,9 +6,17 @@ export type StampItem = SharedStampListItemResponse;
 export const stampCategories = ["character", "bond", "text", "other"] as const;
 export type StampCategory = (typeof stampCategories)[number];
 
+/**
+ * Where a stamp comes from, as the master API reads it from the resource box that rewards it.
+ * Kizuna stamps are the Bond category, so they have no source tab of their own.
+ */
+export const stampSources = ["shop", "live", "rank", "exchange", "crystal", "other"] as const;
+export type StampSource = (typeof stampSources)[number];
+
 export type StampListQuery = {
   name: string;
   category: StampCategory | null;
+  source: StampSource | null;
   /** The game character every listed stamp shows. */
   characterId: number | null;
   /** A second character the stamp must also show; only meaningful with `characterId`. */
@@ -23,12 +31,14 @@ const parsePositiveId = (value: string | null): number | null => {
 
 export const parseStampListQuery = (searchParams: URLSearchParams): StampListQuery => {
   const category = searchParams.get("category");
+  const source = searchParams.get("source");
   const characterId = parsePositiveId(searchParams.get("character"));
   const secondCharacterId =
     characterId === null ? null : parsePositiveId(searchParams.get("second"));
   return {
     name: searchParams.get("name")?.trim() ?? "",
     category: stampCategories.find((value) => value === category) ?? null,
+    source: stampSources.find((value) => value === source) ?? null,
     characterId,
     // A stamp cannot show the same character twice.
     secondCharacterId: secondCharacterId === characterId ? null : secondCharacterId,
@@ -42,6 +52,7 @@ export const toStampSearchParams = (query: StampListQuery, page?: number): URLSe
   if (page !== undefined) params.set("page", String(page));
   if (query.name) params.set("name", query.name);
   if (query.category !== null) params.set("category", query.category);
+  if (query.source !== null) params.set("source", query.source);
   if (query.characterId !== null) params.set("character", String(query.characterId));
   if (query.characterId !== null && query.secondCharacterId !== null) {
     params.set("second", String(query.secondCharacterId));

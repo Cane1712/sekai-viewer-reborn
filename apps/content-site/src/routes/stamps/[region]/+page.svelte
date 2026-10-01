@@ -15,6 +15,7 @@
     getStampCharacters,
     getStampDisplayName,
     stampCategories,
+    stampSources,
     toStampSearchParams,
     type StampItem,
     type StampListQuery
@@ -107,6 +108,10 @@
       label: t(`stamp.category.${category}`)
     }))
   ]);
+  const sourceTabs = $derived([
+    { key: null, label: t("stamp.all") },
+    ...stampSources.map((source) => ({ key: source, label: t(`stamp.source.${source}`) }))
+  ]);
   const pickerLabels = $derived({
     loading: t("stamp.loading"),
     error: t("stamp.error"),
@@ -143,23 +148,40 @@
   <h1 class="text-2xl font-bold text-(--archive-text-strong)">{title}</h1>
 {/snippet}
 
-{#snippet controls()}
-  <div class="flex min-w-0 flex-1 flex-col gap-4" data-swipe-region-skip>
-    <div class="flex min-w-0 flex-wrap gap-2" role="group" aria-label={t("stamp.category")}>
-      {#each tabs as tab (tab.key ?? "all")}
-        {@const selected = data.query.category === tab.key}
+{#snippet tabGroup(
+  label: string,
+  items: { key: string | null; label: string }[],
+  selected: string | null,
+  onSelect: (key: string | null) => void
+)}
+  <div class="grid min-w-0 gap-2">
+    <h2 class="text-sm font-semibold text-(--archive-text-strong)">{label}</h2>
+    <div class="flex min-w-0 flex-wrap gap-2" role="group" aria-label={label}>
+      {#each items as item (item.key ?? "all")}
+        {@const active = selected === item.key}
         <button
           type="button"
-          class="btn touch-target max-w-full rounded-xl whitespace-normal wrap-break-word {selected
+          class="btn touch-target max-w-full rounded-xl whitespace-normal wrap-break-word {active
             ? 'btn-primary'
             : 'btn-ghost'}"
-          aria-pressed={selected}
-          onclick={() => navigateQuery({ category: tab.key })}
+          aria-pressed={active}
+          onclick={() => onSelect(item.key)}
         >
-          {tab.label}
+          {item.label}
         </button>
       {/each}
     </div>
+  </div>
+{/snippet}
+
+{#snippet controls()}
+  <div class="flex min-w-0 flex-1 flex-col gap-4" data-swipe-region-skip>
+    {@render tabGroup(t("stamp.category"), tabs, data.query.category, (key) =>
+      navigateQuery({ category: stampCategories.find((value) => value === key) ?? null })
+    )}
+    {@render tabGroup(t("stamp.source"), sourceTabs, data.query.source, (key) =>
+      navigateQuery({ source: stampSources.find((value) => value === key) ?? null })
+    )}
     <div class="grid min-w-0 gap-3">
       <MissionCharacterPicker
         characters={characterOptions.items}

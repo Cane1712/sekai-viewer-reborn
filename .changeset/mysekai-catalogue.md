@@ -19,3 +19,5 @@ Regenerate the master API SDK for the `mysekaiShops` operation, the solo virtual
 Add a Stamps page to the content-site sidebar, after Titles. Stamps can be searched by name, filtered by category (single character, bond, text, other) and by one character, with a switch that adds a second character so only stamps showing both appear. The list shows only the stamp images; selecting one opens the image preview with the stamp's name, its characters, and how it is obtained, and WebP and PNG downloads. The shared image preview accepts optional content below the image.
 
 Regenerate the master API SDK for the new `stamps` list operation.
+
+Add source tabs to the Stamps page (stamp shop, virtual live, character rank, exchange, crystal shop, other), which keep the stamps that come from that source, with the master API's new `source` filter. Regenerate the master API SDK for it.

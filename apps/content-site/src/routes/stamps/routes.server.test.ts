@@ -67,7 +67,7 @@ describe("stamp data endpoint", () => {
     server.fetchStampListPage.mockResolvedValue(page);
 
     const response = await getStampsPage(
-      event({ region: "jp" }, "http://localhost/data?page=2&category=text") as never
+      event({ region: "jp" }, "http://localhost/data?page=2&category=text&source=live") as never
     );
 
     expect(response.status).toBe(200);
@@ -75,7 +75,7 @@ describe("stamp data endpoint", () => {
     expect(server.fetchStampListPage).toHaveBeenCalledWith(
       "https://master-api.test",
       "jp",
-      expect.objectContaining({ category: "text" }),
+      expect.objectContaining({ category: "text", source: "live" }),
       2
     );
   });

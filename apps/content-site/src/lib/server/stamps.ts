@@ -27,6 +27,7 @@ export const createStampListRequestQuery = (
     sort_order: query.sortOrder,
     ...(query.name ? { name: query.name } : {}),
     ...(query.category ? { category: query.category } : {}),
+    ...(query.source ? { source: query.source } : {}),
     ...(characterIds.length > 0 ? { character_id: characterIds.join(",") } : {})
   };
 };

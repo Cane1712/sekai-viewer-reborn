@@ -5604,6 +5604,10 @@ export type GetStampsByRegionListData = {
          */
         category?: string;
         /**
+         * Comma-separated sources by the resource box that rewards the stamp (shop|exchange|live|rank|bond|crystal|other)
+         */
+        source?: string;
+        /**
          * Comma-separated game character IDs; the stamp must show all of them
          */
         character_id?: string;

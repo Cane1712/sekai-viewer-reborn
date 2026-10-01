@@ -13,6 +13,7 @@ describe("stamp list query", () => {
     expect(parse("")).toEqual({
       name: "",
       category: null,
+      source: null,
       characterId: null,
       secondCharacterId: null,
       sortOrder: "asc"
@@ -20,16 +21,22 @@ describe("stamp list query", () => {
   });
 
   it("reads the name, category, characters, and order", () => {
-    expect(parse("name=%20hello%20&category=bond&character=1&second=2&sort_order=desc")).toEqual({
+    expect(
+      parse("name=%20hello%20&category=bond&source=shop&character=1&second=2&sort_order=desc")
+    ).toEqual({
       name: "hello",
       category: "bond",
+      source: "shop",
       characterId: 1,
       secondCharacterId: 2,
       sortOrder: "desc"
     });
   });
 
-  it("ignores an unknown category and malformed IDs", () => {
+  it("ignores an unknown category or source, and malformed IDs", () => {
+    // Kizuna stamps are the Bond category, so "bond" is not a source tab.
+    expect(parse("source=bond")).toMatchObject({ source: null });
+    expect(parse("source=gifts")).toMatchObject({ source: null });
     expect(parse("category=bonds&character=one&second=2")).toMatchObject({
       category: null,
       characterId: null,
@@ -51,11 +58,11 @@ describe("stamp list query", () => {
     expect(toStampSearchParams(parse("")).toString()).toBe("");
     expect(
       toStampSearchParams(
-        parse("name=a&category=text&character=1&second=2&sort_order=desc")
+        parse("name=a&category=text&source=other&character=1&second=2&sort_order=desc")
       ).toString()
-    ).toBe("name=a&category=text&character=1&second=2&sort_order=desc");
-    expect(toStampSearchParams(parse("category=character"), 3).toString()).toBe(
-      "page=3&category=character"
+    ).toBe("name=a&category=text&source=other&character=1&second=2&sort_order=desc");
+    expect(toStampSearchParams(parse("category=character&source=live"), 3).toString()).toBe(
+      "page=3&category=character&source=live"
     );
   });
 });

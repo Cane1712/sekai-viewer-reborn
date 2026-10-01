@@ -26,5 +26,12 @@
   "stamp.secondCharacterTitle": "Second character",
   "stamp.sortAscending": "Ascending",
   "stamp.sortDescending": "Descending",
-  "stamp.sortOrder": "ID order"
+  "stamp.sortOrder": "ID order",
+  "stamp.source": "Source",
+  "stamp.source.crystal": "Crystal shop",
+  "stamp.source.exchange": "Exchange",
+  "stamp.source.live": "Virtual live",
+  "stamp.source.other": "Other",
+  "stamp.source.rank": "Character rank",
+  "stamp.source.shop": "Stamp shop"
 }
