@@ -11,7 +11,7 @@
   } from "$lib/assets/index";
   import AssetImage from "$lib/components/shared/AssetImage.svelte";
   import RewardItem from "$lib/components/shared/RewardItem.svelte";
-  import { isTitleReward } from "$lib/domain/reward-item";
+  import { getRewardItemIcon, isTitleReward } from "$lib/domain/reward-item";
   import VirtualLiveScheduleSwitcher from "$lib/components/virtual-live/VirtualLiveScheduleSwitcher.svelte";
   import VirtualLiveCharacterGrid from "$lib/components/virtual-live/VirtualLiveCharacterGrid.svelte";
   import VirtualLiveSetlistSummary from "$lib/components/virtual-live/VirtualLiveSetlistSummary.svelte";
@@ -24,9 +24,10 @@
     type RegionBadgeOption
   } from "$lib/components/shared/RegionBadgeSwitch.svelte";
   import type { SupportedRegion } from "$lib/domain/regions";
-  import type {
-    VirtualLiveReward,
-    VirtualLiveRewardResourceBoxDetail
+  import {
+    getVirtualLiveBannerBundle,
+    type VirtualLiveReward,
+    type VirtualLiveRewardResourceBoxDetail
   } from "$lib/domain/virtual-live";
   import { createI18nTranslator, resolveStreamingMessages } from "$lib/i18n/runtime";
   import { formatDisplayDateTime, toTimestampMs } from "$lib/time/date-time";
@@ -177,7 +178,7 @@
       );
     }
 
-    return null;
+    return getRewardItemIcon(detail, data.region)?.src ?? null;
   };
   const getRewardDetailFallbackIcon = (detail: VirtualLiveRewardResourceBoxDetail): string => {
     if (detail.resourceType === "stamp") {
@@ -220,8 +221,8 @@
   {:else}
     <span
       class={REWARD_CHIP_CLASS}
-      title={getRewardDetailLabel(detail)}
-      aria-label={getRewardDetailLabel(detail)}
+      title={detail.resourceName ?? getRewardDetailLabel(detail)}
+      aria-label={detail.resourceName ?? getRewardDetailLabel(detail)}
     >
       {#if imageSrc}
         <img
@@ -292,6 +293,7 @@
 
     {#if payload.virtualLive}
       {@const live = payload.virtualLive}
+      {@const bannerBundle = getVirtualLiveBannerBundle(live)}
       <div
         class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,min(33%,400px))_minmax(0,1fr)] md:items-start lg:grid-cols-[minmax(0,min(33%,400px))_minmax(0,1fr)]"
       >
@@ -301,11 +303,8 @@
               <div
                 class={`content-card-inset aspect-16/7 w-full overflow-hidden ${DETAIL_MEDIA_RADIUS_CLASS}`}
               >
-                {#if live.assetBundleName}
-                  {@const bannerSrc = getVirtualLiveBannerAssetURL(
-                    live.assetBundleName,
-                    data.region
-                  )}
+                {#if bannerBundle}
+                  {@const bannerSrc = getVirtualLiveBannerAssetURL(bannerBundle, data.region)}
                   {@const bannerAlt = `${live.name ?? live.id} ${t("virtualLiveBannerAltSuffix")}`}
                   <AssetImage
                     src={bannerSrc}
@@ -555,6 +554,90 @@
                     {t}
                     formatType={typeLabel}
                   />
+                </section>
+              </div>
+            </article>
+          {/if}
+
+          {#if live.totalCheerPointRewards.length > 0}
+            {@const coin = live.virtualItemOverrideCost}
+            {@const surplus = live.totalCheerPointSurplusReward}
+            <article class="card content-card-shell shadow-sm">
+              <div class="card-body gap-4 p-3 sm:p-5">
+                <section class="space-y-2" aria-labelledby="virtual-live-cheer-rewards-title">
+                  <h2
+                    id="virtual-live-cheer-rewards-title"
+                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.18em] opacity-60"
+                  >
+                    <Icon
+                      icon="mdi:gift-outline"
+                      class="size-4 shrink-0 translate-y-[0.5px]"
+                      aria-hidden="true"
+                    />
+                    <span>{t("virtualLiveCheerRewardsTitle")}</span>
+                  </h2>
+                  {#if coin?.costResourceName}
+                    <p class="flex items-center gap-2 text-sm">
+                      {#if coin.costResourceType && coin.costResourceId !== null}
+                        {@const coinIcon = getRewardItemIcon(
+                          {
+                            resourceType: coin.costResourceType,
+                            resourceId: coin.costResourceId
+                          },
+                          data.region
+                        )}
+                        {#if coinIcon}
+                          <img
+                            src={coinIcon.src}
+                            alt=""
+                            class="size-6 shrink-0 object-contain"
+                            loading="lazy"
+                            decoding="async"
+                            onerror={hideBrokenImage}
+                          />
+                        {/if}
+                      {/if}
+                      <span
+                        >{t("virtualLiveCheerRewardsUnit").replace(
+                          "{coin}",
+                          coin.costResourceName
+                        )}</span
+                      >
+                    </p>
+                  {/if}
+                  <ol class="space-y-2">
+                    {#each live.totalCheerPointRewards as reward, rewardIndex (reward.id ?? rewardIndex)}
+                      <li
+                        class="content-card-inset flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl p-3"
+                      >
+                        <span class="min-w-14 text-sm font-semibold tabular-nums">
+                          {formatNumber(reward.threshold) ?? t("virtualLiveValueUnavailable")}
+                        </span>
+                        <div class="flex flex-wrap gap-2">
+                          {#each reward.resourceBox?.details ?? [] as detail, detailIndex (getRewardDetailKey(detail, detailIndex))}
+                            {@render rewardDetailChip(detail)}
+                          {/each}
+                        </div>
+                      </li>
+                    {/each}
+                    {#if surplus && surplus.basePoint !== null && (surplus.resourceBox?.details.length ?? 0) > 0}
+                      <li
+                        class="content-card-inset flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl p-3"
+                      >
+                        <span class="text-sm font-semibold">
+                          {t("virtualLiveCheerRewardsSurplus").replace(
+                            "{count}",
+                            formatNumber(surplus.basePoint) ?? ""
+                          )}
+                        </span>
+                        <div class="flex flex-wrap gap-2">
+                          {#each surplus.resourceBox?.details ?? [] as detail, detailIndex (getRewardDetailKey(detail, detailIndex))}
+                            {@render rewardDetailChip(detail)}
+                          {/each}
+                        </div>
+                      </li>
+                    {/if}
+                  </ol>
                 </section>
               </div>
             </article>

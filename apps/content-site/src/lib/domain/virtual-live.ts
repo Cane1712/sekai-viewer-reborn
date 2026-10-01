@@ -33,10 +33,25 @@ export type VirtualLiveListItem = {
   name: string | null;
   virtualLiveType: string | null;
   assetBundleName: string | null;
+  /**
+   * The asset bundle of the group a grouped live (a virtual message or solo
+   * live) belongs to. Such lives have no banner of their own; the group's
+   * names theirs.
+   */
+  groupAssetBundleName: string | null;
   startAt: string | number | null;
   endAt: string | number | null;
   status: VirtualLiveStatus;
 };
+
+/**
+ * The asset bundle naming a live's banner. Grouped lives (virtual messages,
+ * solo lives) have no banner of their own and use their group's.
+ */
+export const getVirtualLiveBannerBundle = (live: {
+  assetBundleName: string | null;
+  groupAssetBundleName: string | null;
+}): string | null => live.groupAssetBundleName ?? live.assetBundleName;
 
 export type VirtualLiveListPagination = {
   page: number;
@@ -139,12 +154,44 @@ export type VirtualLiveRewardResourceBoxDetail = {
   resourceQuantity: number | null;
   seq: number | null;
   honor: VirtualLiveRewardHonor | null;
-  /** Localized name of a gacha ticket, material, skill practice ticket, boost item, or title. */
+  /**
+   * Localized name of a gacha ticket, material, skill practice ticket, boost item, title,
+   * MySekai material or tool, stamp, or virtual live archive item.
+   */
   resourceName?: string | null;
-  /** Gacha tickets only; their icon path uses it. */
+  /**
+   * Gacha tickets, MySekai materials and tools, stamps, and virtual live archive items only;
+   * their icon path uses it.
+   */
   resourceAssetbundleName?: string | null;
   /** Titles only (low, middle, high, highest); it picks the title reward icon. */
   resourceRarity?: string | null;
+};
+
+/**
+ * A solo virtual live reward for spending at least `threshold` Virtual Cheer
+ * Coins in total.
+ */
+export type VirtualLiveTotalCheerPointReward = {
+  id: number | null;
+  threshold: number | null;
+  resourceBox: VirtualLiveRewardResourceBox | null;
+};
+
+/**
+ * A solo virtual live's reward for every `basePoint` coins spent that no
+ * threshold reward counts (past the last threshold reached).
+ */
+export type VirtualLiveTotalCheerPointSurplusReward = {
+  basePoint: number | null;
+  resourceBox: VirtualLiveRewardResourceBox | null;
+};
+
+/** The item a solo virtual live's cheer items cost in place of virtual coins and crystals. */
+export type VirtualLiveVirtualItemOverrideCost = {
+  costResourceType: string | null;
+  costResourceId: number | null;
+  costResourceName: string | null;
 };
 
 export type VirtualLiveRewardHonor = {
@@ -298,6 +345,11 @@ export type VirtualLiveDetail = VirtualLiveBasic & {
   waitingRoom: VirtualLiveWaitingRoom | null;
   characters: VirtualLiveCharacter[];
   rewards: VirtualLiveReward[];
+  totalCheerPointRewards: VirtualLiveTotalCheerPointReward[];
+  totalCheerPointSurplusReward: VirtualLiveTotalCheerPointSurplusReward | null;
+  virtualItemOverrideCost: VirtualLiveVirtualItemOverrideCost | null;
+  /** The asset bundle of the live's group, which names a grouped live's banner. */
+  groupAssetBundleName: string | null;
   schedules: VirtualLiveSchedule[];
   setlists: VirtualLiveSetlist[];
   virtualLiveGroup: VirtualLiveGroupDisplay | null;

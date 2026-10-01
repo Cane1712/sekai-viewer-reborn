@@ -7,7 +7,8 @@ import type {
   SharedMysekaiFixtureTagResponse,
   SharedMysekaiMaterialDetailResponse,
   SharedMysekaiMaterialResponse,
-  SharedMysekaiMusicRecordResponse
+  SharedMysekaiMusicRecordResponse,
+  SharedMysekaiShopItemResponse
 } from "@platform/sekai-master-api-sdk";
 
 export type MysekaiFixture = SharedMysekaiFixtureListItemResponse;
@@ -21,6 +22,11 @@ export type MysekaiMaterial = SharedMysekaiMaterialResponse;
 export type MysekaiMaterialDetail = SharedMysekaiMaterialDetailResponse;
 export type MysekaiMusicRecord = SharedMysekaiMusicRecordResponse;
 export type MusicSoundTrackCategory = SharedMusicSoundTrackCategoryResponse;
+export type MysekaiShopItem = SharedMysekaiShopItemResponse;
+
+/** The secret shop's sections that master data describes, as in the game's tabs. */
+export const mysekaiShopTypes = ["material", "tool"] as const;
+export type MysekaiShopType = (typeof mysekaiShopTypes)[number];
 
 export type MysekaiPagination = {
   page: number;

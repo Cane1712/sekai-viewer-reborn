@@ -36,6 +36,26 @@ describe("getRewardItemIcon", () => {
     expect(getRewardItemIcon(item("gacha_ticket", 17), "jp")).toBeNull();
   });
 
+  it("reads MySekai material and tool icons from the JP server by asset bundle", () => {
+    expect(getRewardItemIcon(item("mysekai_material", 35, "item_memoria_1"), "tw")?.src).toMatch(
+      /sekai-jp-assets\/mysekai\/thumbnail\/material\/item_memoria_1\.webp$/
+    );
+    expect(getRewardItemIcon(item("mysekai_tool", 10, "ax0005"), "jp")?.src).toMatch(
+      /sekai-jp-assets\/mysekai\/thumbnail\/tool\/ax0005\.webp$/
+    );
+    expect(getRewardItemIcon(item("mysekai_material", 35), "jp")).toBeNull();
+  });
+
+  it("names stamp and virtual live archive item icons by asset bundle", () => {
+    expect(getRewardItemIcon(item("stamp", 33, "stamp0038"), "tw")?.src).toMatch(
+      /sekai-tc-assets\/stamp\/stamp0038\/stamp0038\.webp$/
+    );
+    expect(
+      getRewardItemIcon(item("virtual_live_transition_item", 1, "memory_peace_5th_01"), "jp")?.src
+    ).toMatch(/thumbnail\/virtual_live_transition_item\/memory_peace_5th_01\.webp$/);
+    expect(getRewardItemIcon(item("stamp", 33), "jp")).toBeNull();
+  });
+
   it("falls back to the JP material icon outside JP", () => {
     const tw = getRewardItemIcon(item("material", 13), "tw");
     expect(tw?.src).toMatch(/sekai-tc-assets\/thumbnail\/material\/material13\.webp$/);

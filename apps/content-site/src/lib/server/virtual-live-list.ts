@@ -194,6 +194,10 @@ const parseVirtualLiveListItem = (payload: unknown): VirtualLiveListItem | null 
     name,
     virtualLiveType: pickFirstString(root, ["virtualLiveType", "virtual_live_type"]),
     assetBundleName: pickFirstString(root, ["assetbundleName", "assetBundleName"]),
+    groupAssetBundleName: pickFirstString(getObject(root["virtualLiveGroup"]) ?? {}, [
+      "assetbundleName",
+      "assetBundleName"
+    ]),
     startAt,
     endAt,
     status: deriveVirtualLiveStatus(startAt, endAt)

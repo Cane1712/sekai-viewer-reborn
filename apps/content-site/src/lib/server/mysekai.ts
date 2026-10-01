@@ -6,6 +6,7 @@ import {
   getMysekaiMaterialsByRegionList,
   getMysekaiMusicRecordsByRegionFilters,
   getMysekaiMusicRecordsByRegionList,
+  getMysekaiShopsByRegionList,
   type GetMysekaiFixturesByRegionListData,
   type GetMysekaiMusicRecordsByRegionListData
 } from "@platform/sekai-master-api-sdk";
@@ -19,7 +20,8 @@ import type {
   MysekaiMusicRecordFilters,
   MysekaiMusicRecordListPage,
   MysekaiSoundtrackListQuery,
-  MysekaiPagination
+  MysekaiPagination,
+  MysekaiShopItem
 } from "$lib/domain/mysekai";
 import { getMasterApiV1BaseUrl } from "./catalogue-data";
 
@@ -30,6 +32,9 @@ export const MYSEKAI_SOUNDTRACK_PAGE_SIZE = 48;
 // The master API's page size limit; every region has fewer materials than this.
 const MYSEKAI_MATERIAL_PAGE_SIZE = 100;
 const MAX_MATERIAL_PAGES = 5;
+// The secret shop sells a few dozen items; one page holds them all.
+const MYSEKAI_SHOP_PAGE_SIZE = 100;
+const MAX_SHOP_PAGES = 5;
 
 type MasterApiPagination = {
   page?: number;
@@ -162,6 +167,27 @@ export const fetchMysekaiMaterialDetail = async (
     throw new Error("Failed to load MySekai material.");
   }
   return response.data;
+};
+
+/** Every secret shop item of the region, in stored order. Regions without the shop have none. */
+export const fetchMysekaiShopItems = async (
+  baseUrl: string,
+  region: string
+): Promise<MysekaiShopItem[]> => {
+  const items: MysekaiShopItem[] = [];
+  for (let page = 1; page <= MAX_SHOP_PAGES; page += 1) {
+    const response = await getMysekaiShopsByRegionList({
+      baseUrl: getMasterApiV1BaseUrl(baseUrl),
+      path: { region },
+      query: { page, page_size: MYSEKAI_SHOP_PAGE_SIZE }
+    });
+    if (response.error || !response.data) {
+      throw new Error("Failed to load the MySekai secret shop.");
+    }
+    items.push(...(response.data.items ?? []));
+    if (!response.data.pagination?.has_next) break;
+  }
+  return items;
 };
 
 /** Soundtracks are the music records of the `music_sound_track` type. */

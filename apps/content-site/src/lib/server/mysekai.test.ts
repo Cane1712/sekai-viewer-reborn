@@ -7,7 +7,8 @@ const sdk = vi.hoisted(() => ({
   getMysekaiMaterialsByRegionById: vi.fn(),
   getMysekaiMaterialsByRegionList: vi.fn(),
   getMysekaiMusicRecordsByRegionFilters: vi.fn(),
-  getMysekaiMusicRecordsByRegionList: vi.fn()
+  getMysekaiMusicRecordsByRegionList: vi.fn(),
+  getMysekaiShopsByRegionList: vi.fn()
 }));
 vi.mock("@platform/sekai-master-api-sdk", () => sdk);
 
@@ -20,6 +21,7 @@ import {
   fetchMysekaiFixtureListPage,
   fetchMysekaiMaterialDetail,
   fetchMysekaiMaterials,
+  fetchMysekaiShopItems,
   fetchMysekaiSoundtrackFilters,
   fetchMysekaiSoundtrackListPage,
   MYSEKAI_FIXTURE_PAGE_SIZE
@@ -101,6 +103,26 @@ describe("MySekai materials", () => {
 
     expect(materials.map((material) => material.id)).toEqual([1, 2]);
     expect(sdk.getMysekaiMaterialsByRegionList).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("MySekai secret shop", () => {
+  it("reads every shop page from the v1 API and throws on failure", async () => {
+    sdk.getMysekaiShopsByRegionList
+      .mockResolvedValueOnce({ data: { items: [{ id: 1 }], pagination: { has_next: true } } })
+      .mockResolvedValueOnce({ data: { items: [{ id: 101 }] } });
+
+    const items = await fetchMysekaiShopItems("https://api.example.test", "jp");
+
+    expect(items.map((item) => item.id)).toEqual([1, 101]);
+    expect(sdk.getMysekaiShopsByRegionList).toHaveBeenNthCalledWith(1, {
+      baseUrl: "https://api.example.test/api/v1",
+      path: { region: "jp" },
+      query: { page: 1, page_size: 100 }
+    });
+
+    sdk.getMysekaiShopsByRegionList.mockResolvedValueOnce({ error: { code: "x" } });
+    await expect(fetchMysekaiShopItems("https://api.example.test", "jp")).rejects.toThrow();
   });
 });
 

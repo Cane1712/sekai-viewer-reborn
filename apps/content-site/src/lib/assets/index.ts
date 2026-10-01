@@ -618,6 +618,20 @@ export const getMysekaiMaterialIconURL = (
     : null;
 };
 
+export const getMysekaiToolIconURL = (
+  assetbundleName: string | null | undefined,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(assetbundleName);
+  return bundle
+    ? buildServerAssetURL(
+        `mysekai/thumbnail/tool/${bundle}.webp`,
+        MYSEKAI_ASSET_SERVER,
+        baseUrlOverride
+      )
+    : null;
+};
+
 /** The jacket of a sound-track category, named by the category's asset bundle. */
 export const getMysekaiSoundTrackJacketURL = (
   categoryAssetbundleName: string | null | undefined,

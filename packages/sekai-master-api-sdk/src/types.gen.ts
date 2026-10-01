@@ -550,8 +550,9 @@ export type SharedEventRewardRangeResponse = {
 export type SharedEventRewardResourceBoxDetail = {
     honor?: SharedEventRewardHonorResponse;
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceBoxId?: number;
@@ -560,8 +561,9 @@ export type SharedEventRewardResourceBoxDetail = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, boost items, and titles (honors and
-     * Kizuna titles).
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
@@ -915,8 +917,9 @@ export type SharedMissionParameterGroupResponse = {
 
 export type SharedMissionResourceBoxDetailResponse = {
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceBoxId?: number;
@@ -925,8 +928,9 @@ export type SharedMissionResourceBoxDetailResponse = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, boost items, and titles (honors and
-     * Kizuna titles).
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
@@ -1288,6 +1292,39 @@ export type SharedMysekaiPhotoDecorationResponse = {
     seq?: number;
 };
 
+export type SharedMysekaiShopCostResponse = {
+    quantity: number;
+    resourceId?: number;
+    resourceType: string;
+};
+
+export type SharedMysekaiShopItemResponse = {
+    costs: Array<SharedMysekaiShopCostResponse>;
+    id: number;
+    mysekaiShopExchangeLimitType?: string;
+    mysekaiShopExchangeLimitValue?: number;
+    mysekaiShopType: string;
+    resources: Array<SharedMysekaiShopResourceResponse>;
+    seq?: number;
+};
+
+export type SharedMysekaiShopListResponse = {
+    items: Array<SharedMysekaiShopItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiShopResourceResponse = {
+    assetbundleName?: string;
+    description?: string;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    mysekaiToolType?: string;
+    name?: string;
+    resourceId?: number;
+    resourceQuantity: number;
+    resourceType: string;
+};
+
 export type SharedMysekaiSiteResponse = {
     id: number;
     name: string;
@@ -1431,6 +1468,13 @@ export type SharedVirtualLiveCharacter = {
     virtualLivePerformanceType?: string;
 };
 
+export type SharedVirtualLiveGroupSummaryResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+    virtualLiveGroupType?: string;
+};
+
 export type SharedVirtualLiveInformation = {
     description?: string;
     summary?: string;
@@ -1465,6 +1509,12 @@ export type SharedVirtualLiveListItemResponse = {
     id: number;
     name: string;
     startAt: number;
+    /**
+     * VirtualLiveGroup is the group a grouped live (a virtual message or solo
+     * live) belongs to. Such lives have no banner of their own; the group's
+     * assetbundleName names it.
+     */
+    virtualLiveGroup?: SharedVirtualLiveGroupSummaryResponse;
     virtualLiveType: string;
 };
 
@@ -1506,7 +1556,23 @@ export type SharedVirtualLiveObjectResponse = {
     virtualLivePlatform: string;
     virtualLiveReward?: SharedVirtualLiveReward;
     virtualLiveRewards?: Array<SharedVirtualLiveReward>;
+    /**
+     * VirtualLiveTotalCheerPointRewards are a solo virtual live's rewards for
+     * the Virtual Cheer Coins spent in total, by threshold. Other lives have
+     * none.
+     */
+    virtualLiveTotalCheerPointRewards?: Array<SharedVirtualLiveTotalCheerPointReward>;
+    /**
+     * VirtualLiveTotalCheerPointSurplusReward is a solo virtual live's reward
+     * for every BasePoint coins spent that no threshold reward counts.
+     */
+    virtualLiveTotalCheerPointSurplusReward?: SharedVirtualLiveTotalCheerPointSurplusReward | null;
     virtualLiveType: string;
+    /**
+     * VirtualLiveVirtualItemOverrideCost is the item a solo virtual live's
+     * cheer items cost in place of virtual coins and crystals.
+     */
+    virtualLiveVirtualItemOverrideCost?: SharedVirtualLiveVirtualItemOverrideCost | null;
     virtualLiveWaitingRoom?: SharedVirtualLiveWaitingRoom;
 };
 
@@ -1528,16 +1594,18 @@ export type SharedVirtualLiveRewardResourceBox = {
 export type SharedVirtualLiveRewardResourceBoxDetail = {
     honor?: SharedEventRewardHonorResponse;
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceId?: number;
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, boost items, and titles (honors and
-     * Kizuna titles).
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
@@ -1583,6 +1651,40 @@ export type SharedVirtualLiveSetlist = {
 
 export type SharedVirtualLiveSetlistsResponse = {
     items: Array<SharedVirtualLiveSetlist>;
+};
+
+export type SharedVirtualLiveTotalCheerPointReward = {
+    id: number;
+    resourceBox?: SharedVirtualLiveRewardResourceBox;
+    resourceBoxId: number;
+    threshold: number;
+    virtualLiveId: number;
+};
+
+export type SharedVirtualLiveTotalCheerPointSurplusReward = {
+    basePoint: number;
+    id: number;
+    resourceBox?: SharedVirtualLiveRewardResourceBox;
+    resourceBoxId: number;
+    virtualLiveId: number;
+};
+
+export type SharedVirtualLiveVirtualItemOverrideCost = {
+    assetbundleName?: string;
+    /**
+     * CostResourceAssetbundleName is the asset bundle name the cost item's
+     * icon path depends on, when it has one.
+     */
+    costResourceAssetbundleName?: string;
+    costResourceId: number;
+    /**
+     * CostResourceName is the cost item's localized name, for the item types
+     * reward details name.
+     */
+    costResourceName?: string;
+    costResourceType: string;
+    id: number;
+    virtualLiveId: number;
 };
 
 export type SharedVirtualLiveWaitingRoom = {
@@ -5348,6 +5450,57 @@ export type GetMysekaiPhotoDecorationsByRegionByIdResponses = {
 };
 
 export type GetMysekaiPhotoDecorationsByRegionByIdResponse = GetMysekaiPhotoDecorationsByRegionByIdResponses[keyof GetMysekaiPhotoDecorationsByRegionByIdResponses];
+
+export type GetMysekaiShopsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Comma-separated shop types, such as material or tool
+         */
+        shop_type?: string;
+    };
+    url: '/mysekaiShops/{region}/list';
+};
+
+export type GetMysekaiShopsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiShopsByRegionListError = GetMysekaiShopsByRegionListErrors[keyof GetMysekaiShopsByRegionListErrors];
+
+export type GetMysekaiShopsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiShopListResponse;
+};
+
+export type GetMysekaiShopsByRegionListResponse = GetMysekaiShopsByRegionListResponses[keyof GetMysekaiShopsByRegionListResponses];
 
 export type GetSpecialStoriesByRegionListData = {
     body?: never;
