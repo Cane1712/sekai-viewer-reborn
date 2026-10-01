@@ -3,6 +3,7 @@
   import type { SupportedRegion } from "$lib/domain/regions";
   import { getRewardItemIcon } from "$lib/domain/reward-item";
   import { titlePreviewKindOf } from "$lib/domain/title-preview";
+  import { ImagePreviewDialog } from "@platform/ui-shell";
   import {
     REWARD_CHIP_BUTTON_CLASS,
     REWARD_CHIP_CLASS,
@@ -10,6 +11,7 @@
     REWARD_CHIP_QUANTITY_CLASS
   } from "$lib/styles/reward-chip";
   import TitlePreviewDialog from "./TitlePreviewDialog.svelte";
+  import { getTitlePreviewLabels } from "./title-preview-labels";
 
   let {
     detail,
@@ -32,7 +34,7 @@
     quantityLabel?: string | null;
     /** `md` frames the item as a reward chip for reward rows; `lg` suits standalone totals. */
     size?: "md" | "lg";
-    /** A title reward opens its preview; off for totals that sum several titles. */
+    /** A title or stamp reward opens its preview; off for totals that sum several titles. */
     preview?: boolean;
     class?: string;
   } = $props();
@@ -59,6 +61,14 @@
     !preview || detail.resourceId === null ? null : titlePreviewKindOf(detail.resourceType)
   );
   let titlePreview: TitlePreviewDialog | null = $state(null);
+  // A stamp reward opens its image in the shared image preview.
+  const stampSrc = $derived(preview && detail.resourceType === "stamp" ? src : null);
+  let stampPreviewOpen = $state(false);
+  const closeLabel = $derived(getTitlePreviewLabels()().close);
+  const showPreview = (): void => {
+    if (titleKind) titlePreview?.show();
+    else stampPreviewOpen = true;
+  };
   const accessibleLabel = $derived(quantityLabel ? `${label} ${quantityLabel}` : label);
   const chip = $derived(size === "md");
 </script>
@@ -80,7 +90,7 @@
     >{/if}
 {/snippet}
 
-{#if titleKind && detail.resourceId !== null}
+{#if (titleKind && detail.resourceId !== null) || stampSrc}
   <button
     type="button"
     class="tooltip align-middle {chip
@@ -89,7 +99,7 @@
     data-tip={label}
     aria-label={accessibleLabel}
     aria-haspopup="dialog"
-    onclick={() => titlePreview?.show()}
+    onclick={showPreview}
   >
     {#if src}
       {@render iconImage()}
@@ -100,14 +110,26 @@
         >{/if}
     {/if}
   </button>
-  <TitlePreviewDialog
-    bind:this={titlePreview}
-    {region}
-    kind={titleKind}
-    id={detail.resourceId}
-    level={detail.resourceLevel ?? null}
-    fallbackName={label}
-  />
+  {#if titleKind && detail.resourceId !== null}
+    <TitlePreviewDialog
+      bind:this={titlePreview}
+      {region}
+      kind={titleKind}
+      id={detail.resourceId}
+      level={detail.resourceLevel ?? null}
+      fallbackName={label}
+    />
+  {:else if stampSrc}
+    <ImagePreviewDialog
+      bind:open={stampPreviewOpen}
+      src={stampSrc}
+      alt={label}
+      {closeLabel}
+      formatOptions={["webp", "png"]}
+      dialogBoxClass="relative flex w-fit max-w-[96vw] items-center justify-center overflow-hidden rounded-box bg-base-100/96 p-2 md:p-4"
+      dialogImageClass="h-auto max-h-[88vh] w-auto max-w-full object-contain"
+    />
+  {/if}
 {:else if src}
   <!-- A game-asset icon may stand alone (DESIGN.md, Focus and accessibility): the tooltip
        and the accessible label carry the item's name. -->

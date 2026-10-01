@@ -210,8 +210,8 @@
 {#snippet rewardDetailChip(detail: VirtualLiveRewardResourceBoxDetail)}
   {@const imageSrc = getRewardDetailImageSrc(detail)}
   {@const quantity = formatNumber(detail.resourceQuantity)}
-  {#if isTitleReward(detail.resourceType)}
-    <!-- Title rewards show the in-game title icon; it opens a preview of the title. -->
+  {#if isTitleReward(detail.resourceType) || detail.resourceType === "stamp"}
+    <!-- Title and stamp rewards show their in-game icon; it opens a preview. -->
     <RewardItem
       {detail}
       region={data.region}

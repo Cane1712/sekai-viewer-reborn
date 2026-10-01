@@ -94,6 +94,59 @@ describe("RewardItem", () => {
     expect(title.querySelector("img")?.classList).toContain("size-10");
   });
 
+  it("opens a stamp reward's image in the image preview, with WebP and PNG downloads", async () => {
+    const showModal = vi.fn(function (this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    HTMLDialogElement.prototype.showModal = showModal;
+    const { container } = render(RewardItem, {
+      detail: { resourceType: "stamp", resourceId: 33, resourceAssetbundleName: "stamp0038" },
+      region: "jp",
+      label: "Stamp",
+      quantityLabel: "×1"
+    });
+
+    const stamp = screen.getByRole("button", { name: "Stamp ×1" });
+    expect(stamp.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(container.querySelector("dialog")?.hasAttribute("open")).toBe(false);
+
+    await fireEvent.click(stamp);
+
+    expect(showModal).toHaveBeenCalledTimes(1);
+    const dialog = container.querySelector("dialog");
+    expect(dialog?.getAttribute("aria-label")).toBe("Stamp");
+    expect(dialog?.querySelector("img")?.getAttribute("src")).toBe(
+      "https://assets.test/sekai-jp-assets/stamp/stamp0038/stamp0038.webp"
+    );
+    expect(
+      [...(dialog?.querySelectorAll("a[download]") ?? [])].map((a) => a.getAttribute("href"))
+    ).toEqual([
+      "https://assets.test/sekai-jp-assets/stamp/stamp0038/stamp0038.webp",
+      "https://assets.test/sekai-jp-assets/stamp/stamp0038/stamp0038.png"
+    ]);
+  });
+
+  it("keeps a stamp without an icon, or with previews off, as a plain item", () => {
+    render(RewardItem, {
+      detail: { resourceType: "stamp", resourceId: 33 },
+      region: "jp",
+      label: "Stamp",
+      quantityLabel: "×1"
+    });
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("Stamp")).toBeTruthy();
+    cleanup();
+
+    render(RewardItem, {
+      detail: { resourceType: "stamp", resourceId: 33, resourceAssetbundleName: "stamp0038" },
+      region: "jp",
+      label: "Stamp",
+      preview: false
+    });
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByRole("img", { name: "Stamp" })).toBeTruthy();
+  });
+
   it.each(["md", "lg"] as const)(
     "keeps the %s title button's ::after free for the tooltip arrow",
     (size) => {
