@@ -135,8 +135,8 @@ describe("catalogue honor adapter", () => {
       { ...group, honorType: "event", backgroundAssetBundleName: "honor_top_000001" }
     );
     expect(buildHonorDegreeLayout(standard.sub, resolveAsset, "sub1").layers.at(-1)).toMatchObject({
-      x: 60,
-      y: 0,
+      x: 30,
+      y: 42,
       width: 120,
       height: 38
     });

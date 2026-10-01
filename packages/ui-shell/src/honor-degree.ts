@@ -25,11 +25,16 @@ export const bondsHonorLocalAssetResources = {
   maskSub: "mask_degree_sub"
 } as const;
 
-/** Verified local resource names for the two staged Live Master star assets. */
+/**
+ * Verified local resource names for the staged Live Master assets: the lit (`star1`) and
+ * unlit (`star2`) stars, and the clear-count digits `number_0`…`number_9` from the APK's
+ * `HonorAtlas` sprite atlas.
+ */
 export const liveMasterLocalAssetResources = {
   bundlePath: "local/live-master",
   star1: "live_master_honor_star_1",
-  star2: "live_master_honor_star_2"
+  star2: "live_master_honor_star_2",
+  numberPrefix: "number_"
 } as const;
 
 /** Asset names used by the regular honor level indicator. */
@@ -92,14 +97,23 @@ function addHonorDegreePart(
   if (part) add(name, part, part);
 }
 
+/**
+ * `main_rank` (180×78) is anchored to the right edge's middle; `sub_rank` (158×40) to
+ * the bottom centre of the 180×80 sub root (jp-6.7.0 UIPartsRankLiveHonorImage).
+ */
 function getRankMatchOverlayRect(main: boolean): HonorDegreeRect {
   if (main) return { x: 200, y: 1, width: 180, height: 78 };
-  return { x: 11, y: 0, width: 158, height: 40 };
+  return { x: 11, y: 40, width: 158, height: 40 };
 }
 
+/**
+ * `UpdateRankView` moves the centre-anchored `rank` node by sprite width: the 150×78
+ * `rank_main` to (75, 0) in the 380×80 root, the 120×38 `rank_sub` to (0, −21) in the
+ * 180×80 sub root (`GetSlotSize`), which puts it at the bottom centre.
+ */
 function getEventRankOverlayRect(main: boolean): HonorDegreeRect {
   if (main) return { x: 190, y: 1, width: 150, height: 78 };
-  return { x: 60, y: 0, width: 120, height: 38 };
+  return { x: 30, y: 42, width: 120, height: 38 };
 }
 
 function getChapterRankAssetBundleName(honor: NormalHonorDegreeInput): string | null {
@@ -291,8 +305,109 @@ function addNormalHonorDetailLayers(
   }
 
   if (honor.honorType === "live-master") {
+    if (honor.liveMaster) addLiveMasterLayers(honor, honor.liveMaster, main, add);
     honor.liveMasterParts?.forEach((part, index) => addPart(`live-master-${index}`, part));
   }
+}
+
+// UIPartsLiveMasterHonorLevel (jp-6.7.0 prefab 267c4c67…, SVG templates §3.5). SetSlot
+// re-parents the 100×78 part group onto liveMasterMainPosition (78.2, 1) or
+// liveMasterSubPosition (0, 1) and zeroes its local position, so its centre is (268.2, 39)
+// in the main root and (90, 39) in the sub root.
+const LIVE_MASTER_STARS: readonly (readonly [number, number])[] = [
+  [41.93, -29.17],
+  [34.09, -17.24],
+  [26.67, -3.22],
+  [34.09, 11.3],
+  [41.93, 25.2],
+  [113.9, -29.17],
+  [121.75, -16.75],
+  [129.1, -3.22],
+  [121.75, 11.3],
+  [113.9, 25.2]
+];
+const LIVE_MASTER_STAR_SIZE = 18;
+// ClearCountNumbers: 57.35×17.95 at (0.5, −21.01) in the part group, scale 0.891; its
+// horizontal layout centres the active digits (Hundreds, Tens, Ones), top-aligned, with
+// −0.42 spacing. Digits are 16×22, except 13×22 for "1".
+const LIVE_MASTER_NUMBER = { width: 57.35, height: 17.95, scale: 0.891, spacing: -0.42 };
+
+function getLiveMasterStarCount(level: number): number {
+  return level % 10 === 0 ? 10 : level % 10;
+}
+
+/** NumberView.UpdateNumber with OutOfDigitRangeView 2: the low three digits, no leading zeros. */
+function getLiveMasterDigits(clearCount: number): number[] {
+  const digits: number[] = [];
+  let remaining = clearCount;
+  for (let index = 0; index < 3; index++) {
+    if (index > 0 && remaining === 0) break;
+    digits.unshift(remaining % 10);
+    remaining = Math.floor(remaining / 10);
+  }
+  return digits;
+}
+
+function addLiveMasterLayers(
+  honor: NormalHonorDegreeInput,
+  liveMaster: NonNullable<NormalHonorDegreeInput["liveMaster"]>,
+  main: boolean,
+  add: HonorDegreeLayerAdder
+): void {
+  const centreX = main ? 268.2 : 90;
+  const centreY = 39;
+  add("live-master-scroll", liveMaster.scroll, {
+    x: centreX + 0.5 - 101 / 2,
+    y: centreY + 1 - 75 / 2,
+    width: 101,
+    height: 75
+  });
+
+  // The main slot shows every unlit star and the lit ones over them; the sub slot hides both.
+  if (main && validLevel(honor.level)) {
+    const lit = getLiveMasterStarCount(honor.level);
+    const { bundlePath, star1, star2 } = liveMasterLocalAssetResources;
+    LIVE_MASTER_STARS.forEach(([x, y], index) => {
+      const rect = {
+        x: 190 + x - LIVE_MASTER_STAR_SIZE / 2,
+        y: 40 - y - LIVE_MASTER_STAR_SIZE / 2,
+        width: LIVE_MASTER_STAR_SIZE,
+        height: LIVE_MASTER_STAR_SIZE
+      };
+      add(`live-master-star-off-${index}`, { bundlePath, resourceName: star2 }, rect);
+      if (index < lit)
+        add(`live-master-star-on-${index}`, { bundlePath, resourceName: star1 }, rect);
+    });
+  }
+
+  const clearCount = liveMaster.clearCount;
+  if (typeof clearCount !== "number" || !Number.isSafeInteger(clearCount) || clearCount < 0) {
+    return;
+  }
+  const digits = getLiveMasterDigits(clearCount);
+  const widths = digits.map((digit) => (digit === 1 ? 13 : 16));
+  const { width, height, scale, spacing } = LIVE_MASTER_NUMBER;
+  const contentWidth =
+    widths.reduce((sum, digitWidth) => sum + digitWidth, 0) + spacing * (widths.length - 1);
+  const numberCentreX = centreX + 0.5;
+  const numberCentreY = centreY + 21.01;
+  let localX = (width - contentWidth) / 2;
+  digits.forEach((digit, index) => {
+    add(
+      `live-master-digit-${index}`,
+      {
+        bundlePath: liveMasterLocalAssetResources.bundlePath,
+        resourceName: `${liveMasterLocalAssetResources.numberPrefix}${digit}`
+      },
+      {
+        x: numberCentreX + (localX - width / 2) * scale,
+        y: numberCentreY - (height / 2) * scale,
+        width: widths[index] * scale,
+        height: 22 * scale
+      }
+    );
+    localX += widths[index] + spacing;
+  });
 }
 
 function addNormalHonorDegreeLayers(

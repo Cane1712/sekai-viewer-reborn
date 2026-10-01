@@ -11,7 +11,8 @@ import {
 import type {
   HonorDegreeAssetResolver,
   HonorDegreeInput,
-  HonorDegreeSlot
+  HonorDegreeSlot,
+  NormalHonorDegree
 } from "./honor-degree.types";
 
 const resolveAsset: HonorDegreeAssetResolver = (bundle, resource) => `/${bundle}/${resource}`;
@@ -124,7 +125,7 @@ describe("HonorDegree", () => {
       ).toEqual(["body", "frame", "rank"]);
       const rank = container.querySelector('[data-layer="rank"]');
       expect(["x", "y", "width", "height"].map((key) => rank?.getAttribute(key))).toEqual(
-        slot === "main" ? ["190", "1", "150", "78"] : ["60", "0", "120", "38"]
+        slot === "main" ? ["190", "1", "150", "78"] : ["30", "42", "120", "38"]
       );
     }
   );
@@ -177,8 +178,8 @@ describe("HonorDegree", () => {
     );
 
     expect(layout.layers[2]).toMatchObject({
-      x: 60,
-      y: 0,
+      x: 30,
+      y: 42,
       width: 120,
       height: 38
     });
@@ -324,7 +325,7 @@ describe("HonorDegree", () => {
       expect(layout.layers[2]).toMatchObject(
         slot === "main"
           ? { x: 200, y: 1, width: 180, height: 78 }
-          : { x: 11, y: 0, width: 158, height: 40 }
+          : { x: 11, y: 40, width: 158, height: 40 }
       );
       expect(
         buildHonorDegreeLayout({ kind: "rank-match", assetBundleName: "tier" }, resolveAsset)
@@ -408,7 +409,8 @@ describe("HonorDegree", () => {
     expect(liveMasterLocalAssetResources).toEqual({
       bundlePath: "local/live-master",
       star1: "live_master_honor_star_1",
-      star2: "live_master_honor_star_2"
+      star2: "live_master_honor_star_2",
+      numberPrefix: "number_"
     });
   });
 
@@ -842,5 +844,75 @@ describe("HonorDegree loading placeholder", () => {
 
     expect(placeholder(container)).toBeNull();
     expect(loads).toHaveLength(0);
+  });
+});
+
+describe("Live Master parts", () => {
+  const resolve = (bundlePath: string, resourceName: string) => `${bundlePath}/${resourceName}`;
+  const honor: NormalHonorDegree & {
+    liveMaster: NonNullable<NormalHonorDegree["liveMaster"]>;
+  } = {
+    kind: "normal",
+    honorType: "live-master",
+    assetBundleName: "honor_3009_100",
+    rarity: 1,
+    level: 13,
+    liveMaster: {
+      scroll: { bundlePath: "honor/honor_3009_100", resourceName: "scroll.png" },
+      clearCount: 107
+    }
+  };
+
+  it("draws the scroll, lit and unlit stars, and the clear count in the main slot", () => {
+    const layers = buildHonorDegreeLayout(honor, resolve, "main").layers;
+    const scroll = layers.find((layer) => layer.name === "live-master-scroll");
+    expect(scroll).toMatchObject({ x: 218.2, y: 2.5, width: 101, height: 75 });
+    expect(layers.filter((layer) => layer.name.startsWith("live-master-star-off"))).toHaveLength(
+      10
+    );
+    const lit = layers.filter((layer) => layer.name.startsWith("live-master-star-on"));
+    expect(lit).toHaveLength(3);
+    // Star 1 sits at the bottom of the left arc.
+    expect(lit[0].x).toBeCloseTo(222.93);
+    expect(lit[0].y).toBeCloseTo(60.17);
+    const digits = layers.filter((layer) => layer.name.startsWith("live-master-digit"));
+    expect(digits.map((layer) => layer.href)).toEqual([
+      "local/live-master/number_1",
+      "local/live-master/number_0",
+      "local/live-master/number_7"
+    ]);
+    expect(digits[0].width).toBeCloseTo(13 * 0.891);
+    expect(digits[0].y).toBeCloseTo(60.01 - (17.95 / 2) * 0.891);
+    const left = digits[0].x;
+    const right = digits[2].x + digits[2].width;
+    expect((left + right) / 2).toBeCloseTo(268.7, 0);
+  });
+
+  it("lights ten stars on whole tens, hides stars in the sub slot, and drops leading zeros", () => {
+    const tenth = buildHonorDegreeLayout({ ...honor, level: 20 }, resolve, "main").layers;
+    expect(tenth.filter((layer) => layer.name.startsWith("live-master-star-on"))).toHaveLength(10);
+
+    const sub = buildHonorDegreeLayout(
+      { ...honor, liveMaster: { ...honor.liveMaster, clearCount: 5 } },
+      resolve,
+      "sub1"
+    ).layers;
+    expect(sub.some((layer) => layer.name.startsWith("live-master-star"))).toBe(false);
+    expect(sub.find((layer) => layer.name === "live-master-scroll")).toMatchObject({
+      x: 40,
+      y: 2.5
+    });
+    const digits = sub.filter((layer) => layer.name.startsWith("live-master-digit"));
+    expect(digits.map((layer) => layer.href)).toEqual(["local/live-master/number_5"]);
+    expect(digits[0].x + digits[0].width / 2).toBeCloseTo(90.5, 0);
+  });
+
+  it("omits the number when the clear count is unknown", () => {
+    const layers = buildHonorDegreeLayout(
+      { ...honor, liveMaster: { ...honor.liveMaster, clearCount: null } },
+      resolve,
+      "main"
+    ).layers;
+    expect(layers.some((layer) => layer.name.startsWith("live-master-digit"))).toBe(false);
   });
 });

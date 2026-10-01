@@ -36,6 +36,16 @@ export interface NormalHonorDegree {
   readonly rankAsset?: HonorDegreeAsset | null;
   /** Drawn last, in supplied order. Caller supplies the selected slot's geometry. */
   readonly liveMasterParts?: readonly HonorDegreePart[];
+  /**
+   * Live MASTER parts the builder lays out as the game does (jp-6.7.0
+   * UIPartsLiveMasterHonorLevel): the scroll, ten level stars in the main slot, and the
+   * clear count on the scroll's ribbon. Used only for honorType live-master.
+   */
+  readonly liveMaster?: {
+    readonly scroll?: HonorDegreeAsset | null;
+    /** The honor mission's progress; omitted when unknown, which hides the number. */
+    readonly clearCount?: number | null;
+  } | null;
 }
 
 export interface RankMatchHonorDegree {

@@ -29,6 +29,10 @@
       "types": "./src/card-thumbnail-data.ts",
       "default": "./src/card-thumbnail-data.ts"
     },
+    "./honor-degree-adapter": {
+      "types": "./src/honor-degree-adapter.ts",
+      "default": "./src/honor-degree-adapter.ts"
+    },
     "./theme-controls": {
       "types": "./src/theme-controls.types.ts",
       "default": "./src/theme-controls.types.ts"

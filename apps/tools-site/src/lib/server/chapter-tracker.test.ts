@@ -48,8 +48,28 @@ describe("chapter tracker data layer", () => {
     ).resolves.toEqual({
       status: "available",
       rankings: [
-        { rank: 1, score: 100, userId: "one", userName: null, timestamp: null, eventId: null },
-        { rank: 2, score: 0, userId: "two", userName: null, timestamp: null, eventId: null }
+        {
+          rank: 1,
+          score: 100,
+          userId: "one",
+          userName: null,
+          timestamp: null,
+          eventId: null,
+          leaderCard: null,
+          profileHonors: [],
+          honorMissions: []
+        },
+        {
+          rank: 2,
+          score: 0,
+          userId: "two",
+          userName: null,
+          timestamp: null,
+          eventId: null,
+          leaderCard: null,
+          profileHonors: [],
+          honorMissions: []
+        }
       ]
     });
     expect(mocks.getEventChapterRankingLive).not.toHaveBeenCalled();

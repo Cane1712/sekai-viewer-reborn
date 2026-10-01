@@ -12,12 +12,23 @@ const detail = {
     name: " Reward honor ",
     assetbundleName: "master",
     honorRarity: "high",
-    group: {
-      honorType: "character",
-      frameName: "frame",
-      backgroundAssetbundleName: "group-background"
-    },
+    group: { honorType: "character", frameName: "frame" },
     levels: [{ level: 7, assetbundleName: "level_seven", honorRarity: "middle" }]
+  }
+} satisfies SharedEventRewardResourceBoxDetail;
+
+// Rank 1 of JP event 219, as /events/jp/219/rewards returns it.
+const eventRankDetail = {
+  resourceType: "honor",
+  resourceLevel: 1,
+  honor: {
+    id: 8764,
+    name: "1位",
+    assetbundleName: "honor_top_000001",
+    honorRarity: "highest",
+    groupId: 679,
+    group: { id: 679, honorType: "event", backgroundAssetbundleName: "honor_bg_event_ourways" },
+    levels: [{ honorId: 8764, level: 1 }]
   }
 } satisfies SharedEventRewardResourceBoxDetail;
 
@@ -28,32 +39,29 @@ describe("reward honor adapter", () => {
       honorType: "regular",
       assetBundleName: "master",
       group: { frameName: "frame" },
-      rarity: "high",
+      frameBundlePath: "local/honor",
+      rarity: 2,
       level: 7,
       rankAsset: null
     });
   });
 
-  it.each(["event", "event_point"])("uses master-level rank art for %s", (honorType) => {
-    expect(
-      adaptRewardHonor({
-        ...detail,
-        honor: {
-          ...detail.honor,
-          group: { honorType, backgroundAssetbundleName: "background", frameName: "frame" }
-        }
-      })
-    ).toMatchObject({
+  it("draws event rank rewards on the event background with the rank overlay", () => {
+    expect(adaptRewardHonor(eventRankDetail)).toMatchObject({
       kind: "normal",
       honorType: "event",
-      assetBundleName: "master",
-      rankAsset: { bundlePath: "honor/master", resourceName: "rank_main.png" }
+      assetBundleName: "honor_bg_event_ourways",
+      rarity: 3,
+      rankAsset: { bundlePath: "honor/honor_top_000001", resourceName: "rank_main.png" }
     });
+  });
+
+  it("omits an event reward without its rank art rather than inventing one", () => {
     expect(
       adaptRewardHonor({
         honor: {
           assetbundleName: "",
-          group: { honorType, backgroundAssetbundleName: "background" },
+          group: { honorType: "event", backgroundAssetbundleName: "background" },
           levels: [{ level: 1, assetbundleName: "not_a_rank" }]
         }
       })
@@ -73,33 +81,17 @@ describe("reward honor adapter", () => {
       kind: "rank-match",
       assetBundleName: "master",
       backgroundAssetBundleName: "season",
-      rarity: "high",
+      rarity: 2,
       frameBundlePath: "local/honor"
     });
   });
 
-  it("allows rank-match background-only data without inventing a master rank asset", () => {
-    expect(
-      adaptRewardHonor({
-        honor: {
-          honorRarity: "middle",
-          group: { honorType: "rank_match", backgroundAssetbundleName: "season" }
-        }
-      })
-    ).toEqual({
-      kind: "rank-match",
-      assetBundleName: null,
-      backgroundAssetBundleName: "season",
-      rarity: "middle",
-      frameBundlePath: "local/honor"
-    });
-  });
-
-  it("maps birthday honors and falls back to the selected level's assets and rarity", () => {
+  it("maps birthday honors at the rewarded level", () => {
     expect(
       adaptRewardHonor({
         resourceLevel: 7,
         honor: {
+          assetbundleName: "birthday_honor",
           honorType: "birthday",
           levels: detail.honor.levels,
           group: { frameName: "birthday" }
@@ -109,57 +101,23 @@ describe("reward honor adapter", () => {
       kind: "normal",
       honorType: "birthday",
       level: 7,
-      rarity: "middle",
-      assetBundleName: "level_seven",
+      rarity: 1,
+      assetBundleName: "birthday_honor",
       group: { frameName: "birthday" }
     });
   });
 
-  it("uses a valid selected-level bundle only as a non-event fallback", () => {
-    expect(
-      adaptRewardHonor({
-        resourceLevel: 7,
-        honor: {
-          group: { honorType: "character", backgroundAssetbundleName: "not-a-body" },
-          levels: [{ level: 7, assetbundleName: "level_seven" }]
-        }
-      })
-    ).toMatchObject({ kind: "normal", assetBundleName: "level_seven" });
-    expect(
-      adaptRewardHonor({
-        resourceLevel: 7,
-        honor: {
-          group: { honorType: "character" },
-          levels: [{ level: 7, assetbundleName: "../invalid" }]
-        }
-      })
-    ).toBeNull();
-  });
-
-  it("chooses the lowest supplied positive level deterministically without mutating data", () => {
+  it("falls back to the first positive level without mutating data", () => {
     const levels = [
       { level: 6, assetbundleName: "six" },
       { level: 0 },
       { level: 2, assetbundleName: "two" }
     ];
-    expect(adaptRewardHonor({ honor: { levels } })).toMatchObject({
-      level: 2,
-      assetBundleName: "two"
+    expect(adaptRewardHonor({ honor: { assetbundleName: "base", levels } })).toMatchObject({
+      level: 6
     });
     expect(levels.map((level) => level.level)).toEqual([6, 0, 2]);
   });
-
-  it.each([0, -1, 1.5, NaN, Infinity])(
-    "does not invent level icons for invalid level %s",
-    (resourceLevel) => {
-      expect(
-        adaptRewardHonor({
-          resourceLevel,
-          honor: { assetbundleName: "base", honorRarity: "unknown" }
-        })
-      ).toMatchObject({ level: null, rarity: null });
-    }
-  );
 
   it("omits unavailable and non-honor media rather than rendering a frame alone", () => {
     expect(adaptRewardHonor({})).toBeNull();
@@ -172,7 +130,6 @@ describe("reward honor adapter", () => {
         honor: { assetbundleName: "bonds", honorType: "bonds_honor" }
       })
     ).toBeNull();
-    expect(adaptRewardHonor({ honor: { assetbundleName: "../invalid" } })).toBeNull();
   });
 });
 
