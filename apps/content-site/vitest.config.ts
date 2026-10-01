@@ -107,6 +107,8 @@ export default defineConfig({
         "src/lib/server/mysekai-soundtrack-download.ts",
         "src/lib/assets/index.ts",
         "src/lib/domain/mysekai.ts",
+        "src/lib/domain/stamp.ts",
+        "src/lib/server/stamps.ts",
         "src/lib/paged-list.svelte.ts",
         "src/lib/soundtrack-player.svelte.ts",
         "src/lib/i18n/streamed-translator.svelte.ts",
@@ -147,7 +149,9 @@ export default defineConfig({
         "src/routes/mysekai/shop/[region]/+page.server.ts",
         "src/routes/mysekai/soundtracks/[region]/+page.server.ts",
         "src/routes/mysekai/soundtracks/[region]/data/+server.ts",
-        "src/routes/mysekai/soundtracks/[region]/[id]/download/+server.ts"
+        "src/routes/mysekai/soundtracks/[region]/[id]/download/+server.ts",
+        "src/routes/stamps/[region]/+page.server.ts",
+        "src/routes/stamps/[region]/data/+server.ts"
       ],
       reporter: ["lcov"]
     }

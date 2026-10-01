@@ -3,7 +3,8 @@ import {
   getMysekaiFixtureThumbnailURL,
   getMysekaiMaterialIconURL,
   getMysekaiSoundTrackAudioURL,
-  getMysekaiSoundTrackJacketURL
+  getMysekaiSoundTrackJacketURL,
+  getStampImageURL
 } from "./index";
 
 vi.mock("$env/dynamic/public", () => ({
@@ -61,5 +62,16 @@ describe("MySekai asset URLs", () => {
     expect(getMysekaiSoundTrackAudioURL("sound/scenario/bgm/bgm00036", null)).toBe(
       `${jp}/sound/scenario/bgm/bgm00036/bgm00036.mp3`
     );
+  });
+});
+
+describe("stamp image URLs", () => {
+  it("names the image by the stamp's own bundle on the region's server", () => {
+    expect(getStampImageURL("stamp0038", "tw")).toBe(
+      "https://assets.example.test/sekai-tc-assets/stamp/stamp0038/stamp0038.webp"
+    );
+    expect(getStampImageURL(" /stamp0941/ ")).toBe(`${jp}/stamp/stamp0941/stamp0941.webp`);
+    expect(getStampImageURL(null)).toBeNull();
+    expect(getStampImageURL("  ")).toBeNull();
   });
 });

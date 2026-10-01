@@ -103,6 +103,7 @@
   let virtualLivesLabel = $state(getInitialI18nText("navigation.virtualLives"));
   let missionsLabel = $state(getInitialI18nText("navigation.missions"));
   let honorsLabel = $state(getInitialI18nText("navigation.honors"));
+  let stampsLabel = $state(getInitialI18nText("navigation.stamps"));
   let mysekaiLabel = $state(getInitialI18nText("navigation.mysekai"));
   let mysekaiFixturesLabel = $state(getInitialI18nText("navigation.mysekaiFixtures"));
   let mysekaiMaterialsLabel = $state(getInitialI18nText("navigation.mysekaiMaterials"));
@@ -185,6 +186,7 @@
         first === "musics" ||
         first === "missions" ||
         first === "honors" ||
+        first === "stamps" ||
         first === "virtual-live" ||
         first === "virtual-lives") &&
       second
@@ -305,6 +307,12 @@
       href: `/honors/${sidebarRegion}`,
       active: page.url.pathname.startsWith("/honors/"),
       icon: "mdi:medal-outline"
+    },
+    {
+      label: stampsLabel,
+      href: `/stamps/${sidebarRegion}`,
+      active: page.url.pathname.startsWith("/stamps/"),
+      icon: "mdi:sticker-emoji"
     },
     {
       type: "section",
@@ -443,6 +451,7 @@
     virtualLivesLabel = translate("navigation.virtualLives");
     missionsLabel = translate("navigation.missions");
     honorsLabel = translate("navigation.honors");
+    stampsLabel = translate("navigation.stamps");
     mysekaiLabel = translate("navigation.mysekai");
     mysekaiFixturesLabel = translate("navigation.mysekaiFixtures");
     mysekaiMaterialsLabel = translate("navigation.mysekaiMaterials");

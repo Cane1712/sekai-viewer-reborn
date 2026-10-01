@@ -44,7 +44,7 @@ type MasterApiPagination = {
   has_next?: boolean;
 };
 
-const toPagination = (
+export const toPagination = (
   pagination: MasterApiPagination | undefined,
   page: number,
   pageSize: number

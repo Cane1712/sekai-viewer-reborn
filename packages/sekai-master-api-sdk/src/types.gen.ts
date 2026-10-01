@@ -1410,6 +1410,23 @@ export type SharedSkillResponse = {
     skillFilterId?: number;
 };
 
+export type SharedStampListItemResponse = {
+    assetbundleName?: string;
+    category: string;
+    characterIds: Array<number>;
+    description?: string;
+    gameCharacterUnitId?: number;
+    id: number;
+    name: string;
+    seq?: number;
+    stampType: string;
+};
+
+export type SharedStampListResponse = {
+    items: Array<SharedStampListItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
 export type SharedUnitProfileListResponse = {
     items?: Array<SharedUnitProfileObjectResponse>;
     pagination?: SharedPaginationResponse;
@@ -5560,6 +5577,77 @@ export type GetSpecialStoriesByRegionListResponses = {
 };
 
 export type GetSpecialStoriesByRegionListResponse = GetSpecialStoriesByRegionListResponses[keyof GetSpecialStoriesByRegionListResponses];
+
+export type GetStampsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Case-insensitive substring of the stamp name
+         */
+        name?: string;
+        /**
+         * Comma-separated categories (character|bond|text|other)
+         */
+        category?: string;
+        /**
+         * Comma-separated game character IDs; the stamp must show all of them
+         */
+        character_id?: string;
+        /**
+         * Include stamps that are not published yet
+         */
+        spoiler?: boolean;
+        /**
+         * Sort field (id|seq)
+         */
+        sort_by?: string;
+        /**
+         * Sort order (asc|desc)
+         */
+        sort_order?: string;
+    };
+    url: '/stamps/{region}/list';
+};
+
+export type GetStampsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetStampsByRegionListError = GetStampsByRegionListErrors[keyof GetStampsByRegionListErrors];
+
+export type GetStampsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedStampListResponse;
+};
+
+export type GetStampsByRegionListResponse = GetStampsByRegionListResponses[keyof GetStampsByRegionListResponses];
 
 export type GetSubGameCharactersByRegionListData = {
     body?: never;

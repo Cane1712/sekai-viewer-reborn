@@ -632,6 +632,18 @@ export const getMysekaiToolIconURL = (
     : null;
 };
 
+/** A stamp's image; the bundle name is the stamp's own, not built from its ID. */
+export const getStampImageURL = (
+  assetbundleName: string | null | undefined,
+  server: AssetServer = "jp",
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(assetbundleName);
+  return bundle
+    ? buildServerAssetURL(`stamp/${bundle}/${bundle}.webp`, server, baseUrlOverride)
+    : null;
+};
+
 /** The jacket of a sound-track category, named by the category's asset bundle. */
 export const getMysekaiSoundTrackJacketURL = (
   categoryAssetbundleName: string | null | undefined,

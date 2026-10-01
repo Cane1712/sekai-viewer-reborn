@@ -16,6 +16,7 @@
     "./content-site/music.json": "./content-site/music.json",
     "./content-site/mysekai.json": "./content-site/mysekai.json",
     "./content-site/server.json": "./content-site/server.json",
+    "./content-site/stamp.json": "./content-site/stamp.json",
     "./content-site/virtual-live.json": "./content-site/virtual-live.json",
     "./content-site/unit.json": "./content-site/unit.json",
     "./tools-site/common.json": "./tools-site/common.json",

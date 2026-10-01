@@ -84,6 +84,18 @@ describe("content-site layout server load", () => {
     );
   });
 
+  it("loads the stamp namespace for the stamp list", async () => {
+    loadI18nMessageBundle.mockResolvedValueOnce({});
+
+    await load(createLoadEvent("/stamps/jp"));
+
+    expect(loadI18nMessageBundle).toHaveBeenCalledWith(
+      "en",
+      ["common", "stamp", "error"],
+      expect.any(Function)
+    );
+  });
+
   it("loads the unit namespace for unit detail routes", async () => {
     loadI18nMessageBundle.mockResolvedValueOnce({ unitRosterTitle: "Members" });
 
