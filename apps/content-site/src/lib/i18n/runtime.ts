@@ -69,6 +69,7 @@ export type ContentSiteServerMessageKey =
   | "failedToLoadVirtualLiveData"
   | "discordEmbedOpen"
   | "discordEmbedTrained"
+  | "discordEmbedBirthday"
   | "discordEmbedComposer"
   | "discordEmbedArranger"
   | "discordEmbedLyricist"

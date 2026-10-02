@@ -365,20 +365,24 @@ const RARITY_STAR_COUNT_BY_TYPE: Record<string, number> = {
   rarity_1: 1,
   rarity_2: 2,
   rarity_3: 3,
-  rarity_4: 4,
-  rarity_birthday: 4,
-  rarity_4_birthday: 4
+  rarity_4: 4
 };
 
 const capitalize = (value: string): string =>
   value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 
-const formatRarity = (rarityType: string | null): string | null => {
+const formatRarity = (rarityType: string | null, birthdayLabel: string): string | null => {
   if (!rarityType) {
     return null;
   }
 
-  const count = RARITY_STAR_COUNT_BY_TYPE[rarityType.trim().toLowerCase()];
+  const normalized = rarityType.trim().toLowerCase();
+  // Birthday cards have no star count; the rest of the app shows one birthday icon.
+  if (normalized === "rarity_birthday") {
+    return birthdayLabel;
+  }
+
+  const count = RARITY_STAR_COUNT_BY_TYPE[normalized];
   if (count) {
     return `★${count}`;
   }
@@ -405,13 +409,18 @@ export type CardEmbedSource = {
   flavorText?: string | null;
 };
 
+export type CardMetaLabels = {
+  trained: string;
+  birthday: string;
+};
+
 export const buildCardMetaLine = (
   card: CardEmbedSource,
   trained: boolean,
-  trainedLabel: string
+  labels: CardMetaLabels
 ): string => {
   const parts: string[] = [];
-  const rarity = formatRarity(card.rarityType);
+  const rarity = formatRarity(card.rarityType, labels.birthday);
   if (rarity) {
     parts.push(rarity);
   }
@@ -423,7 +432,7 @@ export const buildCardMetaLine = (
     parts.push(characterName);
   }
   if (trained) {
-    parts.push(trainedLabel);
+    parts.push(labels.trained);
   }
 
   return parts.join(" · ");

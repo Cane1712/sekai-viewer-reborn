@@ -4,6 +4,7 @@ import type { I18nFetcher } from "@platform/i18n-runtime";
 export type DiscordEmbedLabels = {
   open: string;
   trained: string;
+  birthday: string;
   composer: string;
   arranger: string;
   lyricist: string;
@@ -21,6 +22,7 @@ export const loadDiscordEmbedLabels = async (
   const [
     open,
     trained,
+    birthday,
     composer,
     arranger,
     lyricist,
@@ -31,6 +33,7 @@ export const loadDiscordEmbedLabels = async (
   ] = await Promise.all([
     getServerI18nText(locale, "discordEmbedOpen", fetcher),
     getServerI18nText(locale, "discordEmbedTrained", fetcher),
+    getServerI18nText(locale, "discordEmbedBirthday", fetcher),
     getServerI18nText(locale, "discordEmbedComposer", fetcher),
     getServerI18nText(locale, "discordEmbedArranger", fetcher),
     getServerI18nText(locale, "discordEmbedLyricist", fetcher),
@@ -43,6 +46,7 @@ export const loadDiscordEmbedLabels = async (
   return {
     open,
     trained,
+    birthday,
     composer,
     arranger,
     lyricist,

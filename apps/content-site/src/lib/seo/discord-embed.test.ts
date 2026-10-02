@@ -220,6 +220,7 @@ describe("buildDiscordEmbedSeo", () => {
 });
 
 describe("embed meta lines", () => {
+  const cardLabels = { trained: "Trained", birthday: "Birthday" };
   const creditLabels = { composer: "Composer", arranger: "Arranger", lyricist: "Lyricist" };
 
   it("formats card rarity, attribute, character, and trained state", () => {
@@ -234,9 +235,41 @@ describe("embed meta lines", () => {
           flavorText: null
         },
         true,
-        "Trained"
+        cardLabels
       )
     ).toBe("★4 · Cool · Hatsune Miku · Trained");
+  });
+
+  it.each([
+    ["rarity_1", "★1"],
+    ["rarity_2", "★2"],
+    ["rarity_3", "★3"],
+    ["rarity_4", "★4"],
+    ["rarity_birthday", "Birthday"]
+  ])("formats %s as %s", (rarityType, expected) => {
+    expect(
+      buildCardMetaLine({ title: "T", attr: null, rarityType, flavorText: null }, false, cardLabels)
+    ).toBe(expected);
+  });
+
+  it("localizes the birthday label and never shows a star count for it", () => {
+    const line = buildCardMetaLine(
+      { title: "T", attr: "cool", rarityType: "rarity_birthday", flavorText: null },
+      false,
+      { trained: "特訓後", birthday: "誕生日" }
+    );
+    expect(line).toBe("誕生日 · Cool");
+    expect(line).not.toContain("★");
+  });
+
+  it("passes unknown rarity types through, including the gacha rate key", () => {
+    expect(
+      buildCardMetaLine(
+        { title: "T", attr: null, rarityType: "rarity_4_birthday", flavorText: null },
+        false,
+        cardLabels
+      )
+    ).toBe("rarity_4_birthday");
   });
 
   it("prefers flavor text for card descriptions", () => {
@@ -276,11 +309,10 @@ describe("embed meta lines", () => {
       )
     ).toBe("作曲: A · 編曲: B");
     expect(
-      buildCardMetaLine(
-        { title: "T", attr: null, rarityType: null, flavorText: null },
-        true,
-        "特訓後"
-      )
+      buildCardMetaLine({ title: "T", attr: null, rarityType: null, flavorText: null }, true, {
+        trained: "特訓後",
+        birthday: "誕生日"
+      })
     ).toBe("特訓後");
   });
 

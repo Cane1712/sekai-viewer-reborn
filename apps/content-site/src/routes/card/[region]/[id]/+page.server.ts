@@ -284,7 +284,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
             flavorText: card.flavorText
           },
           resolvedTrained,
-          labels.trained
+          labels
         ),
         description: buildCardDescription({
           title: card.title,
