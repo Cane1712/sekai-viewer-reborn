@@ -97,7 +97,6 @@ export type EventTrackerRanking = {
 };
 
 export type EventTrackerRankingResponse = {
-    id?: number;
     eventId?: number;
     timestamp?: string;
     score?: number;
@@ -140,6 +139,58 @@ export type EventChapterTrackerRanking = {
     gameCharacterId?: number;
     rankings?: Array<EventTrackerRankingResponse>;
     userRankingStatus?: string;
+};
+
+export type NotificationAction = {
+    label: string;
+    href: string;
+    target?: '_blank' | '_self' | '_parent' | '_top';
+    rel?: string;
+};
+
+export type Notification = {
+    id: string;
+    version: number;
+    severity: 'info' | 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    action?: NotificationAction;
+    startsAt?: string | null;
+    expiresAt?: string | null;
+    dismissible: boolean;
+    enabled: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+};
+
+export type NotificationInput = {
+    /**
+     * Stable identifier of the notification
+     */
+    id: string;
+    severity: 'info' | 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    action?: NotificationAction;
+    startsAt?: string | null;
+    expiresAt?: string | null;
+    dismissible?: boolean;
+    enabled?: boolean;
+};
+
+export type NotificationUpdate = {
+    /**
+     * Expected current version for optimistic concurrency (optional)
+     */
+    version?: number;
+    severity?: 'info' | 'success' | 'warning' | 'error';
+    title?: string;
+    message?: string;
+    action?: NotificationAction;
+    startsAt?: string | null;
+    expiresAt?: string | null;
+    dismissible?: boolean;
+    enabled?: boolean;
 };
 
 /**
@@ -215,6 +266,12 @@ export type PostEventChapterRankingData = {
      * event point record created by event score tracker
      */
     body: EventChapterTrackerData;
+    headers?: {
+        /**
+         * Optional request key. Reusing it with the same request replays the completed write.
+         */
+        'Idempotency-Key'?: string;
+    };
     path: {
         /**
          * ID of the event
@@ -232,9 +289,17 @@ export type PostEventChapterRankingData = {
 
 export type PostEventChapterRankingErrors = {
     /**
+     * The supplied Idempotency-Key is empty or invalid.
+     */
+    400: unknown;
+    /**
      * Unauthorized
      */
     401: FailureResponse;
+    /**
+     * The Idempotency-Key was previously used for a different request.
+     */
+    409: unknown;
 };
 
 export type PostEventChapterRankingError = PostEventChapterRankingErrors[keyof PostEventChapterRankingErrors];
@@ -500,6 +565,12 @@ export type PostEventRankingData = {
      * event point record created by event score tracker
      */
     body: EventTrackerData;
+    headers?: {
+        /**
+         * Optional request key. Reusing it with the same request replays the completed write.
+         */
+        'Idempotency-Key'?: string;
+    };
     path: {
         /**
          * ID of the event
@@ -517,9 +588,17 @@ export type PostEventRankingData = {
 
 export type PostEventRankingErrors = {
     /**
+     * The supplied Idempotency-Key is empty or invalid.
+     */
+    400: unknown;
+    /**
      * Unauthorized
      */
     401: FailureResponse;
+    /**
+     * The Idempotency-Key was previously used for a different request.
+     */
+    409: unknown;
 };
 
 export type PostEventRankingError = PostEventRankingErrors[keyof PostEventRankingErrors];
@@ -644,3 +723,137 @@ export type HealthcheckResponses = {
      */
     200: unknown;
 };
+
+export type GetActiveNotificationsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/notifications';
+};
+
+export type GetActiveNotificationsResponses = {
+    /**
+     * OK
+     */
+    200: {
+        status?: string;
+        data?: Array<Notification>;
+    };
+};
+
+export type GetActiveNotificationsResponse = GetActiveNotificationsResponses[keyof GetActiveNotificationsResponses];
+
+export type PostNotificationData = {
+    /**
+     * notification to create
+     */
+    body: NotificationInput;
+    path?: never;
+    query?: never;
+    url: '/notifications';
+};
+
+export type PostNotificationErrors = {
+    /**
+     * The supplied notification payload is invalid.
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: FailureResponse;
+};
+
+export type PostNotificationError = PostNotificationErrors[keyof PostNotificationErrors];
+
+export type PostNotificationResponses = {
+    /**
+     * Created
+     */
+    201: {
+        status?: string;
+        data?: Notification;
+    };
+};
+
+export type PostNotificationResponse = PostNotificationResponses[keyof PostNotificationResponses];
+
+export type DeleteNotificationData = {
+    body?: never;
+    path: {
+        /**
+         * Stable identifier of the notification
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/notifications/{id}';
+};
+
+export type DeleteNotificationErrors = {
+    /**
+     * Unauthorized
+     */
+    401: FailureResponse;
+    /**
+     * Not Found
+     */
+    404: FailureResponse;
+};
+
+export type DeleteNotificationError = DeleteNotificationErrors[keyof DeleteNotificationErrors];
+
+export type DeleteNotificationResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+};
+
+export type PutNotificationData = {
+    /**
+     * notification fields to update
+     */
+    body: NotificationUpdate;
+    path: {
+        /**
+         * Stable identifier of the notification
+         */
+        id: string;
+    };
+    query?: never;
+    url: '/notifications/{id}';
+};
+
+export type PutNotificationErrors = {
+    /**
+     * The supplied notification payload is invalid.
+     */
+    400: unknown;
+    /**
+     * Unauthorized
+     */
+    401: FailureResponse;
+    /**
+     * Not Found
+     */
+    404: FailureResponse;
+    /**
+     * The supplied version does not match the stored version.
+     */
+    409: unknown;
+};
+
+export type PutNotificationError = PutNotificationErrors[keyof PutNotificationErrors];
+
+export type PutNotificationResponses = {
+    /**
+     * OK
+     */
+    200: {
+        status?: string;
+        data?: Notification;
+    };
+};
+
+export type PutNotificationResponse = PutNotificationResponses[keyof PutNotificationResponses];

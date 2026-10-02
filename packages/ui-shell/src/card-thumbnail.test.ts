@@ -193,3 +193,22 @@ describe("CardThumbnail retry and visibility behavior", () => {
     expect(probeSignal?.aborted).toBe(true);
   });
 });
+
+describe("CardThumbnail icons", () => {
+  it("pins the attribute icon to the top-left corner with its top-left artwork", () => {
+    const { container } = render(CardThumbnail, {
+      src: "/thumbnail.png",
+      alt: "Card",
+      attr: "cool",
+      rarityCount: 4,
+      loadMode: "immediate"
+    });
+
+    const attrIcon = Array.from(container.querySelectorAll("svg image")).find((image) =>
+      image.getAttribute("href")?.includes("icon_attribute_cool")
+    );
+    expect(attrIcon?.getAttribute("href")).toContain("icon_attribute_cool_64");
+    expect(attrIcon?.getAttribute("x")).toBe("0");
+    expect(attrIcon?.getAttribute("y")).toBe("0");
+  });
+});

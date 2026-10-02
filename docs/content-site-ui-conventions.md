@@ -248,6 +248,10 @@ Current `content-site` sidebar groups:
 - Progression (`navigation.progression`): mission goals and the honors they award
   - Missions
   - Honors
+- MySekai (`navigation.mysekai`): MySekai reference data
+  - Furniture (`/mysekai/fixtures/:region`, detail `/mysekai/fixture/:region/:id`)
+  - Materials (`/mysekai/materials/:region`, detail `/mysekai/material/:region/:id`)
+  - Soundtracks (`/mysekai/soundtracks/:region`)
 - Project (`navigation.project`)
   - Support
 
@@ -290,10 +294,10 @@ When changing `content-site` UI, prefer this order:
 
 ## Shared Interactive Audio Controls
 
-- `AudioPlayer` from `@platform/ui-shell` is the full music player component for music previews and event BGM. It is used by `EventDetailBgmCard` and `MusicPreviewCard`.
-- `VoicePlayButton.svelte` is the compact circular voice play button for short voice clips such as card gacha phrases. It lives in `shared/` and is used by `CardDetailInfoCard`.
-- Both controls manage their own `HTMLAudioElement` state; consumers pass a `src` and localized labels.
-- `VoicePlayButton` should surface missing voice assets with a disabled error icon and localized tooltip instead of silently reverting to the idle play state.
+- `AudioPlayer` from `@platform/ui-shell` is the full music player component for music previews and event BGM. It is used by `EventDetailBgmCard`, `MusicPreviewCard`, and `VirtualLiveSetlistMusicPlayer`.
+- `VoicePlayButton` from `@platform/ui-shell` (`packages/ui-shell/src/voice-play-button.svelte`) is the compact circular voice play button with a playback progress ring for short voice clips such as card gacha phrases. In `content-site` it is used by `CardDetailInfoCard` and `VirtualLiveTimelinePanel`.
+- Both controls manage their own `HTMLAudioElement` state and take localized labels. `AudioPlayer` takes a single `src`; `VoicePlayButton` takes an ordered `sources` array and tries each candidate in turn when one fails to load or decode.
+- `VoicePlayButton` should surface missing voice assets with a disabled error icon and localized tooltip (`errorLabel`) once every source has failed, instead of silently reverting to the idle play state.
 
 ## Virtual Live Timeline Conventions
 

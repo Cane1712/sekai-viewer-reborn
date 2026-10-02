@@ -10,7 +10,7 @@
 
 <a
   {href}
-  class="character-card group flex size-18! flex-none items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:size-20!"
+  class="character-card flex size-18! flex-none items-center justify-center rounded-full outline-none transition-transform duration-180 ease-out hover-lift focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:size-20!"
   title={character.name}
   aria-label={character.name}
 >
@@ -21,7 +21,7 @@
     accentColor={character.unitRecord?.colorCode}
     variant="default"
     decorative
-    class="size-full! bg-base-100 shadow-sm transition-[transform,box-shadow] duration-200 group-hover:brightness-105 group-focus-visible:brightness-105 motion-reduce:transform-none motion-reduce:transition-none"
+    class="size-full! bg-base-100 shadow-sm"
     imageClass="size-full object-contain"
   />
 </a>

@@ -173,7 +173,17 @@ describe("tracker time-travel endpoints", () => {
     ).resolves.toEqual({
       status: "available",
       rankings: [
-        { rank: 1, score: 321, userId: "7", userName: "Bloom", eventId: null, timestamp: null }
+        {
+          rank: 1,
+          score: 321,
+          userId: "7",
+          userName: "Bloom",
+          eventId: null,
+          timestamp: null,
+          leaderCard: null,
+          profileHonors: [],
+          honorMissions: []
+        }
       ]
     });
     expect(mocks.getEventChapterRankingLive).toHaveBeenCalledWith(

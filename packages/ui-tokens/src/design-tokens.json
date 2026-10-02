@@ -14,7 +14,8 @@
       "sunken": "#eef0f6",
       "default": "#ffffff",
       "raised": "#ffffff",
-      "overlay": "#ffffff"
+      "overlay": "#ffffff",
+      "assetBackdrop": "#ffffff"
     },
     "text": {
       "strong": "#202331",

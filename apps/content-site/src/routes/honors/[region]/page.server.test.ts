@@ -10,6 +10,12 @@ const { getMasterApiBaseUrl } = vi.hoisted(() => ({
 }));
 vi.mock("$lib/server/config", () => ({ getMasterApiBaseUrl }));
 
+const { fetchBondsHonorViewData } = vi.hoisted(() => ({ fetchBondsHonorViewData: vi.fn() }));
+vi.mock("$lib/server/honor-list", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("$lib/server/honor-list")>()),
+  fetchBondsHonorViewData
+}));
+
 import { load } from "./+page.server";
 import type { HonorGroup } from "$lib/domain/honor";
 
@@ -74,6 +80,31 @@ describe("honor catalogue page load", () => {
     getHonorGroupsByRegionList.mockReset();
     getMasterApiBaseUrl.mockReset();
     getMasterApiBaseUrl.mockReturnValue("https://master-api.test");
+    fetchBondsHonorViewData.mockReset();
+  });
+
+  it("loads the Bonds display data for the Kizuna category only", async () => {
+    getHonorGroupsByRegionList.mockResolvedValue(createResponse(1));
+    const viewData = { characterUnitIds: { "21:light_sound": 27 }, unitNames: {} };
+    fetchBondsHonorViewData.mockResolvedValue(viewData);
+
+    const regular = (await runLoad("jp", "?honor_type=event")) as unknown as {
+      bondsView: Promise<unknown>;
+    };
+    await expect(regular.bondsView).resolves.toBeNull();
+    expect(fetchBondsHonorViewData).not.toHaveBeenCalled();
+
+    const bonds = (await runLoad("tw", "?honor_type=bonds")) as unknown as {
+      bondsView: Promise<unknown>;
+    };
+    await expect(bonds.bondsView).resolves.toBe(viewData);
+    expect(fetchBondsHonorViewData).toHaveBeenCalledWith("https://master-api.test", "tw");
+
+    fetchBondsHonorViewData.mockRejectedValueOnce(new Error("down"));
+    const failed = (await runLoad("jp", "?honor_type=bonds")) as unknown as {
+      bondsView: Promise<unknown>;
+    };
+    await expect(failed.bondsView).resolves.toBeNull();
   });
 
   it("always SSR-fetches the first group page with normalized search and order state", async () => {
@@ -131,7 +162,7 @@ describe("honor catalogue page load", () => {
 
     await expect(result.catalogue).resolves.toMatchObject({
       items: [],
-      availableHonorTypes: ["character", "event"],
+      availableHonorTypes: ["character", "event", "bonds"],
       loadFailed: false
     });
     expect(getHonorGroupsByRegionList.mock.calls[0]?.[0].query).toMatchObject({

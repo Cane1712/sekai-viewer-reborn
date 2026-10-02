@@ -6,6 +6,14 @@ import {
 } from "$lib/regions";
 import { isRestoreResponse, withRequestTimeout } from "./network";
 import { CRITICAL_RANK_LADDER } from "$lib/tracker-ladders";
+import {
+  parseHonorMissions,
+  parseLeaderCard,
+  parseProfileHonors,
+  type TrackerHonorMission,
+  type TrackerLeaderCard,
+  type TrackerProfileHonor
+} from "$lib/tracker-player-profile";
 
 export const trackerRegions: readonly TrackerSupportedRegion[] = [...trackerSupportedRegions];
 export type TrackerRegion = TrackerSupportedRegion;
@@ -20,6 +28,9 @@ export type EventTrackerRanking = {
   userName: string | null;
   eventId: number | null;
   timestamp: string | null;
+  leaderCard: TrackerLeaderCard | null;
+  profileHonors: TrackerProfileHonor[];
+  honorMissions: TrackerHonorMission[];
 };
 
 export type EventTrackerSelection =
@@ -118,7 +129,10 @@ const parseRanking = (value: unknown): EventTrackerRanking | null => {
     userId: asUserId(ranking.userId),
     userName: asString(ranking.userName),
     eventId: asEventId(ranking.eventId),
-    timestamp: asString(ranking.timestamp)
+    timestamp: asString(ranking.timestamp),
+    leaderCard: parseLeaderCard(ranking.userCard),
+    profileHonors: parseProfileHonors(ranking.userProfileHonors),
+    honorMissions: parseHonorMissions(ranking.userHonorMissions)
   };
 };
 

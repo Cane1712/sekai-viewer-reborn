@@ -16,6 +16,9 @@ import {
   type VirtualLiveScreenMvMusicVocalDisplay,
   type VirtualLiveSetlist,
   type VirtualLiveTicketDisplay,
+  type VirtualLiveTotalCheerPointReward,
+  type VirtualLiveTotalCheerPointSurplusReward,
+  type VirtualLiveVirtualItemOverrideCost,
   type VirtualLiveWaitingRoom
 } from "$lib/domain/virtual-live";
 
@@ -244,7 +247,8 @@ const parseRewardResourceBoxDetail = (
     seq: getNumber(node["seq"]),
     honor: parseRewardHonor(node["honor"]),
     resourceName: getString(node["resourceName"]),
-    resourceAssetbundleName: getString(node["resourceAssetbundleName"])
+    resourceAssetbundleName: getString(node["resourceAssetbundleName"]),
+    resourceRarity: getString(node["resourceRarity"])
   };
 };
 
@@ -285,6 +289,48 @@ const parseReward = (value: unknown): VirtualLiveReward | null => {
     resourceBoxId: getNumber(node["resourceBoxId"]),
     virtualLiveType: getString(node["virtualLiveType"]),
     resourceBox: parseRewardResourceBox(node["resourceBox"])
+  };
+};
+
+const parseTotalCheerPointReward = (value: unknown): VirtualLiveTotalCheerPointReward | null => {
+  const node = getObject(value);
+  if (!node) {
+    return null;
+  }
+
+  return {
+    id: getNumber(node["id"]),
+    threshold: getNumber(node["threshold"]),
+    resourceBox: parseRewardResourceBox(node["resourceBox"])
+  };
+};
+
+const parseTotalCheerPointSurplusReward = (
+  value: unknown
+): VirtualLiveTotalCheerPointSurplusReward | null => {
+  const node = getObject(value);
+  if (!node) {
+    return null;
+  }
+
+  return {
+    basePoint: getNumber(node["basePoint"]),
+    resourceBox: parseRewardResourceBox(node["resourceBox"])
+  };
+};
+
+const parseVirtualItemOverrideCost = (
+  value: unknown
+): VirtualLiveVirtualItemOverrideCost | null => {
+  const node = getObject(value);
+  if (!node) {
+    return null;
+  }
+
+  return {
+    costResourceType: getString(node["costResourceType"]),
+    costResourceId: getNumber(node["costResourceId"]),
+    costResourceName: getString(node["costResourceName"])
   };
 };
 
@@ -426,6 +472,25 @@ export const parseVirtualLiveDetail = (payload: unknown): VirtualLiveDetail | nu
       const reward = parseReward(item);
       return reward ? [reward] : [];
     }),
+    totalCheerPointRewards: getArray(root["virtualLiveTotalCheerPointRewards"])
+      .flatMap((item) => {
+        const reward = parseTotalCheerPointReward(item);
+        return reward ? [reward] : [];
+      })
+      .sort(
+        (a, b) =>
+          (a.threshold ?? Number.POSITIVE_INFINITY) - (b.threshold ?? Number.POSITIVE_INFINITY)
+      ),
+    totalCheerPointSurplusReward: parseTotalCheerPointSurplusReward(
+      root["virtualLiveTotalCheerPointSurplusReward"]
+    ),
+    virtualItemOverrideCost: parseVirtualItemOverrideCost(
+      root["virtualLiveVirtualItemOverrideCost"]
+    ),
+    groupAssetBundleName: getString(
+      getObject(root["virtualLiveGroup"])?.["assetbundleName"] ??
+        getObject(root["virtualLiveGroup"])?.["assetBundleName"]
+    ),
     schedules: getArray(root["virtualLiveSchedules"]).flatMap((item) => {
       const schedule = parseSchedule(item);
       return schedule ? [schedule] : [];

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Icon from "@iconify/svelte";
   import { closeIcon, downloadIcon, openInNewIcon } from "./icons";
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, untrack, type Snippet } from "svelte";
   import {
     ImageRetryController,
     STATIC_ASSET_RETRY_POLICY,
@@ -21,6 +21,8 @@
     dialogBoxClass?: string;
     dialogImageClass?: string;
     retryPolicy?: ImageRetryPolicy;
+    /** Optional content shown below the image, as wide as the image. */
+    children?: Snippet;
   };
 
   let {
@@ -35,7 +37,8 @@
     formatOptions = [],
     dialogBoxClass = "relative flex max-w-[min(96vw,1800px)] items-center justify-center overflow-hidden rounded-box bg-base-100/96 p-2 md:p-4",
     dialogImageClass = "h-auto max-h-[88vh] w-auto max-w-full object-contain",
-    retryPolicy = STATIC_ASSET_RETRY_POLICY
+    retryPolicy = STATIC_ASSET_RETRY_POLICY,
+    children
   }: Props = $props();
 
   let dialog: HTMLDialogElement | null = $state(null);
@@ -84,7 +87,7 @@
     open = false;
   }}
 >
-  <div class={`modal-box ${dialogBoxClass}`}>
+  <div class={`modal-box ${dialogBoxClass} ${children ? "flex-col gap-3" : ""}`}>
     <div class="absolute right-3 top-3 z-10 flex items-center justify-end gap-2">
       {#if !imageRetry.imageFailed}
         {#if hasDownloadFormatOptions}
@@ -179,6 +182,10 @@
         />
       {/key}
     </div>
+    {#if children}
+      <!-- w-0 + min-w-full: the content takes the image's width instead of widening the box. -->
+      <div class="w-0 min-w-full">{@render children()}</div>
+    {/if}
   </div>
 
   <form method="dialog" class="modal-backdrop">

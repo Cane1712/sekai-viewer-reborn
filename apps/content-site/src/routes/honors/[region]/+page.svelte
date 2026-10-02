@@ -4,9 +4,21 @@
   import { resolve } from "$app/paths";
   import { SvelteURLSearchParams } from "svelte/reactivity";
   import HonorCatalogue from "$lib/components/honor/HonorCatalogue.svelte";
-  import type { HonorGroup } from "$lib/domain/honor";
+  import type {
+    BondsHonor,
+    BondsHonorGroup,
+    BondsHonorViewData,
+    HonorGroup
+  } from "$lib/domain/honor";
+  import { formatUnitFallbackLabel } from "$lib/domain/unit-profile";
   import { regionLabels, supportedRegions } from "$lib/domain/regions";
-  import { createHonorDegreeAssetResolver, toCatalogueHonorDegree } from "$lib/honor-degree";
+  import {
+    createHonorDegreeAssetResolver,
+    getBondsHonorPartnerUnit,
+    hasBondsHonorOutfitOption,
+    toCatalogueBondsHonorDegree,
+    toCatalogueHonorDegree
+  } from "$lib/honor-degree";
   import { createI18nTranslator, resolveStreamingMessages } from "$lib/i18n/runtime";
   import { createPageTitle } from "$lib/page-title";
   import sourceMessages from "@platform/i18n-source/content-site/honor.json";
@@ -30,6 +42,8 @@
   const t = $derived(createI18nTranslator(data.uiLocale, messages));
 
   let items = $state<HonorGroup[]>([]);
+  let bondsItems = $state<BondsHonorGroup[]>([]);
+  let bondsViewData = $state<BondsHonorViewData | null>(null);
   let currentPage = $state(1);
   let hasNext = $state(false);
   let isInitialLoading = $state(true);
@@ -55,6 +69,7 @@
   const honorTypeLabelKeys: Record<string, string> = {
     achievement: "honor.category.achievement",
     birthday: "honor.category.birthday",
+    bonds: "honor.category.bonds",
     character: "honor.category.character",
     event: "honor.category.event",
     rank_match: "honor.category.rank_match"
@@ -101,6 +116,63 @@
       }))
     }))
   });
+
+  const unitLabel = (unit: string): string =>
+    bondsViewData?.unitNames[unit] ?? formatUnitFallbackLabel(unit);
+  // The pair's words (the same for every rarity) and, for a unit member with a Virtual
+  // Singer, the Virtual Singer's own outfit and the partner's unit outfit.
+  const toBondsView = (honor: BondsHonor) => {
+    const partnerUnit = getBondsHonorPartnerUnit(honor);
+    return {
+      words: honor.words.map((word) => ({
+        id: word.id,
+        name: word.name ?? word.assetBundleName ?? t("honor.unnamed"),
+        description: word.description
+      })),
+      outfit:
+        bondsViewData && partnerUnit && hasBondsHonorOutfitOption(honor)
+          ? { defaultLabel: unitLabel("piapro"), unitLabel: unitLabel(partnerUnit) }
+          : null
+    };
+  };
+  // A Bonds group is one character pair; its members are the pair's rarities.
+  const toBondsItem = (group: BondsHonorGroup) => ({
+    key: `bonds-${group.id}`,
+    name: group.name ?? group.honors[0]?.name ?? t("honor.unnamed"),
+    degree: group.honors[0] ? toCatalogueBondsHonorDegree(group.honors[0]) : undefined,
+    countLabel: t("honor.memberCount").replace("{count}", formatNumber(group.honors.length)),
+    bondsView: group.honors[0] ? toBondsView(group.honors[0]) : undefined,
+    members: group.honors.map((honor) => ({
+      key: String(honor.id),
+      name: honor.name ?? t("honor.unnamed"),
+      variantLabel: rarityLabel(honor.honorRarity),
+      degree: toCatalogueBondsHonorDegree(honor),
+      degreeFor: (view: Parameters<typeof toCatalogueBondsHonorDegree>[1]) =>
+        toCatalogueBondsHonorDegree(honor, view, bondsViewData),
+      levels: honor.levels.map((level) => ({
+        label:
+          level.level === null
+            ? t("honor.levels")
+            : t("honor.level").replace("{level}", formatNumber(level.level)),
+        description: level.description
+      }))
+    }))
+  });
+  // Pages split the Bonds list by honor, so a pair can straddle two pages.
+  const appendBondsGroups = (
+    current: BondsHonorGroup[],
+    next: BondsHonorGroup[]
+  ): BondsHonorGroup[] => {
+    const last = current.at(-1);
+    const [first, ...rest] = next;
+    if (!last || !first || last.id !== first.id) return [...current, ...next];
+    const seen = new Set(last.honors.map((honor) => honor.id));
+    const merged = {
+      ...last,
+      honors: [...last.honors, ...first.honors.filter((honor) => !seen.has(honor.id))]
+    };
+    return [...current.slice(0, -1), merged, ...rest];
+  };
 
   const queryParams = (query: HonorListQueryState, page?: number): SvelteURLSearchParams => {
     const params = new SvelteURLSearchParams();
@@ -153,6 +225,7 @@
   $effect(() => {
     const requestId = ++listRequestId;
     items = [];
+    bondsItems = [];
     currentPage = 1;
     hasNext = false;
     isInitialLoading = true;
@@ -161,10 +234,17 @@
     loadMoreError = false;
     sortOrder = data.query.sortOrder;
 
+    bondsViewData = null;
+    void Promise.resolve(data.bondsView)
+      .then((viewData) => {
+        if (requestId === listRequestId) bondsViewData = viewData;
+      })
+      .catch(() => {});
     void Promise.resolve(data.catalogue)
       .then((catalogue) => {
         if (requestId !== listRequestId) return;
         items = catalogue.items;
+        bondsItems = catalogue.bondsItems;
         currentPage = catalogue.pagination.page;
         hasNext = catalogue.pagination.hasNext;
         availableHonorTypes = catalogue.availableHonorTypes;
@@ -192,11 +272,13 @@
       if (!response.ok) throw new Error("Honor list request failed.");
       const next = (await response.json()) as {
         items: HonorGroup[];
+        bondsItems?: BondsHonorGroup[];
         pagination: { page: number; hasNext: boolean };
       };
       if (requestId !== listRequestId) return;
       const existingIds = new Set(items.map((item) => item.id));
       items = [...items, ...next.items.filter((item) => !existingIds.has(item.id))];
+      bondsItems = appendBondsGroups(bondsItems, next.bondsItems ?? []);
       currentPage = next.pagination.page;
       hasNext = next.pagination.hasNext;
     } catch {
@@ -216,7 +298,9 @@
   {labels}
   homeHref={resolve("/")}
   {regions}
-  items={isInitialLoading || initialError ? [] : items.map(toItem)}
+  items={isInitialLoading || initialError
+    ? []
+    : [...items.map(toItem), ...bondsItems.map(toBondsItem)]}
   catalogueKey={`${data.region}:${data.query.honorType ?? "all"}:${data.query.name}:${data.query.sortOrder}`}
   status={isInitialLoading ? "loading" : initialError ? "error" : "ready"}
   query={data.query.name}
@@ -224,11 +308,17 @@
   imageUnavailableLabel={t("imageUnavailable")}
   levelsLabel={t("honor.levels")}
   closeLabel={t("closeLabel")}
+  bondsViewLabels={{
+    options: t("honor.bonds.display"),
+    word: t("honor.bonds.word"),
+    outfit: t("honor.bonds.outfit"),
+    swapSides: t("honor.bonds.swapSides")
+  }}
   honorTypes={availableHonorTypes}
   selectedHonorType={data.query.honorType}
   categoryLabel={t("honor.categoryLabel")}
   {getHonorTypeLabel}
-  onHonorTypeChange={(honorType) => navigateQuery({ honorType })}
+  onHonorTypeChange={(honorType) => navigateQuery({ honorType, name: "" })}
   {sortOrder}
   sortOrderLabel={t("honor.sortOrder")}
   sortAscendingLabel={t("honor.sortAscending")}

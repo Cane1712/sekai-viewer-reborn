@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/sve
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "$lib/icons/mdi";
 import HonorCatalogue, { type HonorCatalogueGroup } from "./HonorCatalogue.svelte";
-import type { CatalogueHonorDegree } from "$lib/honor-degree";
+import type { BondsHonor } from "$lib/domain/honor";
+import { toCatalogueBondsHonorDegree, type CatalogueHonorDegree } from "$lib/honor-degree";
 
 const degree = (bundle: string): CatalogueHonorDegree => ({
   main: { kind: "normal", assetBundleName: bundle, rarity: "high", level: 3 },
@@ -182,7 +183,7 @@ describe("HonorCatalogue", () => {
     expect(document.querySelector("details")).toBeNull();
     expect(trigger.classList).toContain("cursor-pointer");
     expect(trigger.classList).toContain("hover-lift");
-    expect(trigger.parentElement?.classList).toContain("xl:grid-cols-3");
+    expect(trigger.parentElement?.classList).toContain("lg:grid-cols-3");
     expect(trigger.parentElement?.classList).toContain("2xl:grid-cols-4");
     expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
     await fireEvent.click(trigger);
@@ -341,6 +342,17 @@ describe("HonorCatalogue", () => {
     expect(document.getElementById(resultsId!)).toBeTruthy();
   });
 
+  it("drops unsubmitted search text when the catalogue changes", async () => {
+    const { rerender } = render(HonorCatalogue, { ...props, onSearch: vi.fn() });
+    const input = screen.getByRole("searchbox") as HTMLInputElement;
+    await fireEvent.input(input, { target: { value: "draft" } });
+    expect(input.value).toBe("draft");
+
+    await rerender({ ...props, onSearch: vi.fn(), catalogueKey: "jp:event" });
+
+    expect(input.value).toBe("");
+  });
+
   it("uses one toggle sort control in the shared deck without a combobox", async () => {
     const onSortOrderChange = vi.fn();
     const { container, rerender } = render(HonorCatalogue, {
@@ -359,9 +371,16 @@ describe("HonorCatalogue", () => {
 
     const deck = container.querySelector(".content-card-elevated");
     expect(deck).toBeTruthy();
-    expect(deck?.classList).toContain("lg:flex-row");
-    expect(deck?.querySelector('[role="search"]')).toBeTruthy();
-    expect(deck?.querySelector('[role="search"]')?.classList).toContain("lg:flex-1");
+    // Search has its own row, so its width does not depend on the category tabs.
+    expect(deck?.classList).not.toContain("lg:flex-row");
+    const search = deck?.querySelector('[role="search"]');
+    expect(search?.parentElement).toBe(deck);
+    expect(search?.classList).toContain("sm:max-w-md");
+    expect(search?.querySelector("div.flex")?.classList).not.toContain("flex-wrap");
+    const controlsRow = deck?.querySelector('[role="tablist"]')?.parentElement?.parentElement;
+    expect(controlsRow?.parentElement).toBe(deck);
+    expect(controlsRow?.classList).toContain("lg:flex-row");
+    expect(controlsRow?.querySelector('[role="group"]')).toBeTruthy();
     expect(deck?.querySelector('[role="search"]')?.classList).not.toContain(
       "content-card-elevated"
     );
@@ -402,5 +421,148 @@ describe("HonorCatalogue", () => {
 
     await fireEvent.click(ascending);
     expect(onSortOrderChange).toHaveBeenLastCalledWith("asc");
+  });
+
+  describe("Bonds display options", () => {
+    const shihoAndMiku = (id: number, honorRarity: string): BondsHonor => ({
+      id,
+      bondsGroupId: 10421,
+      name: "Shiho and Miku",
+      honorRarity,
+      levels: [{ level: 1, description: "Reach Kizuna rank 5" }],
+      words: [
+        {
+          id: 1,
+          seq: 1,
+          assetBundleName: "honorname_0421_default_0421",
+          name: "Shiho & Miku fan",
+          description: "Reach Kizuna rank 5"
+        },
+        {
+          id: 2,
+          seq: 2,
+          assetBundleName: "honorname_0421_01",
+          name: "Cool at times",
+          description: "Reach Kizuna rank 26"
+        }
+      ],
+      units: [
+        { id: 4, gameCharacterId: 4, unit: "light_sound", colorCode: "#bbdd22" },
+        { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" }
+      ],
+      configurableUnitVirtualSinger: true
+    });
+    const viewData = { characterUnitIds: { "21:light_sound": 27 }, unitNames: {} };
+    const bondsGroup = (outfit: boolean): HonorCatalogueGroup => {
+      const honors = [shihoAndMiku(1042101, "low"), shihoAndMiku(1042102, "middle")];
+      return {
+        key: "bonds-10421",
+        name: "Shiho and Miku",
+        degree: toCatalogueBondsHonorDegree(honors[0]!),
+        countLabel: "Titles: 2",
+        bondsView: {
+          words: honors[0]!.words.map(({ id, name, description }) => ({
+            id,
+            name: name ?? "",
+            description
+          })),
+          outfit: outfit ? { defaultLabel: "VIRTUAL SINGER", unitLabel: "Leo/need" } : null
+        },
+        members: honors.map((honor) => ({
+          key: String(honor.id),
+          name: "Shiho and Miku",
+          variantLabel: honor.honorRarity ?? undefined,
+          degree: toCatalogueBondsHonorDegree(honor),
+          degreeFor: (view) => toCatalogueBondsHonorDegree(honor, view, viewData),
+          levels: [{ label: "Level 1", description: "Reach Kizuna rank 5" }]
+        }))
+      };
+    };
+    const openBondsDialog = async (outfit = true) => {
+      render(HonorCatalogue, { ...props, items: [bondsGroup(outfit)] });
+      await fireEvent.click(screen.getByRole("button", { name: /Shiho and Miku/ }));
+      return screen.getByRole("dialog") as HTMLDialogElement;
+    };
+    // Every drawn title's image names, in paint order, per rarity.
+    const titleImages = (dialog: HTMLElement, layer: string) =>
+      Array.from(dialog.querySelectorAll('svg[viewBox="0 0 380 80"]'), (svg) =>
+        Array.from(svg.querySelectorAll(`image[data-layer^="${layer}"]`), (image) =>
+          image.getAttribute("href")?.split("/").pop()
+        )
+      );
+
+    it("applies the chosen word, outfit, and side to every rarity", async () => {
+      const dialog = await openBondsDialog();
+      const options = within(dialog).getByRole("group", { name: "Display" });
+
+      expect(titleImages(dialog, "word")).toEqual([
+        ["honorname_0421_default_0421_01"],
+        ["honorname_0421_default_0421_02"]
+      ]);
+      expect(titleImages(dialog, "bonds-character")[0]).toEqual(["chr_sd_04_01", "chr_sd_21_01"]);
+
+      const words = within(options).getByRole("radiogroup", { name: "Word" });
+      expect(
+        within(words)
+          .getAllByRole("radio")
+          .map((radio) => (radio as HTMLInputElement).checked)
+      ).toEqual([true, false]);
+      await fireEvent.click(within(words).getByRole("radio", { name: "Cool at times" }));
+      expect(titleImages(dialog, "word")).toEqual([
+        ["honorname_0421_01_01"],
+        ["honorname_0421_01_02"]
+      ]);
+      expect(within(options).getByText("Reach Kizuna rank 26")).toBeTruthy();
+
+      const outfit = within(options).getByRole("radiogroup", { name: "Virtual Singer outfit" });
+      expect(
+        within(outfit)
+          .getAllByRole("radio")
+          .map((radio) => (radio as HTMLInputElement).checked)
+      ).toEqual([true, false]);
+      await fireEvent.click(within(outfit).getByRole("radio", { name: "Leo/need" }));
+      expect(titleImages(dialog, "bonds-character")[1]).toEqual(["chr_sd_04_01", "chr_sd_27_01"]);
+
+      await fireEvent.click(within(options).getByRole("checkbox", { name: "Swap sides" }));
+      expect(titleImages(dialog, "bonds-character")[1]).toEqual(["chr_sd_27_01", "chr_sd_04_01"]);
+    });
+
+    it("opens each pair with the default display", async () => {
+      const dialog = await openBondsDialog();
+      const options = within(dialog).getByRole("group", { name: "Display" });
+      await fireEvent.click(within(options).getByRole("radio", { name: "Cool at times" }));
+      await fireEvent.click(within(options).getByRole("checkbox", { name: "Swap sides" }));
+      await fireEvent.keyDown(dialog, { key: "Escape" });
+
+      await fireEvent.click(screen.getByRole("button", { name: /Shiho and Miku/ }));
+
+      expect(
+        (within(dialog).getByRole("radio", { name: "Shiho & Miku fan" }) as HTMLInputElement)
+          .checked
+      ).toBe(true);
+      expect(
+        (within(dialog).getByRole("checkbox", { name: "Swap sides" }) as HTMLInputElement).checked
+      ).toBe(false);
+      expect(titleImages(dialog, "word")[0]).toEqual(["honorname_0421_default_0421_01"]);
+    });
+
+    it("leaves out the outfit option when the pair has none", async () => {
+      const dialog = await openBondsDialog(false);
+
+      expect(
+        within(dialog).queryByRole("radiogroup", { name: "Virtual Singer outfit" })
+      ).toBeNull();
+      expect(within(dialog).getByRole("radiogroup", { name: "Word" })).toBeTruthy();
+      expect(within(dialog).getByRole("checkbox", { name: "Swap sides" })).toBeTruthy();
+    });
+
+    it("shows no display options for regular titles", async () => {
+      render(HonorCatalogue, props);
+      await fireEvent.click(screen.getByRole("button", { name: /Together on stage/ }));
+
+      expect(
+        within(screen.getByRole("dialog")).queryByRole("group", { name: "Display" })
+      ).toBeNull();
+    });
   });
 });

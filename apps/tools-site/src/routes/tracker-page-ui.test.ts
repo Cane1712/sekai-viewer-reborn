@@ -39,10 +39,12 @@ const getOpeningTagById = (source: string, id: string): string => {
 };
 
 describe("tracker page UI contract", () => {
-  it("adds compact decorative honor media without replacing reward labels", async () => {
+  it("lets reward title art replace its text label, keeping the text as a fallback", async () => {
     const source = await readFile(pagePath, "utf8");
-    expect(source).toContain('import { HonorDegree } from "@platform/ui-shell";');
-    expect(source).toContain('resolveHonorAsset(bodyBundle, "degree_main.png")');
+    expect(source).toMatch(/import \{[^}]*\bHonorDegree\b[^}]*\} from "@platform\/ui-shell";/);
+    expect(source).toContain(
+      'return resolveHonorAsset(bodyBundle, "degree_main.png") ? honor : null;'
+    );
     expect(source).toContain(
       'class="block aspect-19/4 w-48 max-w-full overflow-hidden" aria-hidden="true"'
     );
@@ -50,9 +52,30 @@ describe("tracker page UI contract", () => {
     expect(source).toMatch(/<HonorDegree[\s\S]*?\sdecorative\s/);
     expect(source.match(/\{@render rewardHonorMedia\(row.reward\)\}/g)).toHaveLength(2);
     expect(source).toContain("{@render rewardHonorMedia(selectedRow.reward)}");
-    expect(source).toContain('{translate("tracker.degree")}: {formatRewardRange(row.reward)}');
-    expect(source).toContain("<span>{formatRewardRange(selectedRow.reward)}</span>");
+    expect(source).toMatch(/hasRewardHonorMedia\(row\.reward\)\s*\?\s*"sr-only"/);
+    expect(source).toContain("{#if !hasRewardHonorMedia(row.reward)}");
+    expect(source).toContain("class:sr-only={hasRewardHonorMedia(selectedRow.reward)}");
     expect(source).toContain('translate("tracker.degreeUnavailable")');
+  });
+
+  it("shows leader card avatars beside names and the player's titles in details", async () => {
+    const source = await readFile(pagePath, "utf8");
+    expect(source.match(/\{@render leaderAvatar\(row\.ranking\?\.leaderCard\)\}/g)).toHaveLength(2);
+    const avatar = getSourceSection(source, "{#snippet leaderAvatar", "{/snippet}");
+    expect(avatar).toContain('getLeaderCardAssetURL("thumbnail"');
+    expect(avatar).toContain('alt=""');
+    expect(avatar).toContain('<span class="tracker-avatar" aria-hidden="true"></span>');
+    expect(source).toContain('"member-small"');
+    expect(source).toContain("{#each getProfileCardLayers(art, leaderCard) as layer (layer.name)}");
+    expect(source).toMatch(
+      /class="tracker-profile-name"[\s\S]*?class="tracker-profile-titles"[\s\S]*?aria-label=\{translate\("tracker.playerTitles"\)\}/
+    );
+    expect(source).toContain('interpolate("tracker.cardLevel", { level: leaderCard.level })');
+    expect(source).toContain(
+      "void loadProfileHonors(row.ranking?.profileHonors ?? [], row.ranking?.honorMissions ?? []);"
+    );
+    expect(source).toContain('label={title.name ?? translate("tracker.playerTitle")}');
+    expect(source).toContain('translate("tracker.playerTitlesError")');
   });
 
   it("renders accessible player-change markers without motion-dependent behavior", async () => {

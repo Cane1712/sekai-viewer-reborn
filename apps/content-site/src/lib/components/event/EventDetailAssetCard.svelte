@@ -124,11 +124,13 @@
 {/snippet}
 
 <article class="card content-card-shell overflow-hidden shadow-sm">
-  <div class="card-body items-center gap-4 p-3 sm:p-5 text-center">
+  <!-- The card sits in a narrow side column on wide screens, so the tab grid follows the
+       card width rather than the viewport width. -->
+  <div class="card-body @container items-center gap-4 p-3 sm:p-5 text-center">
     <div
       role="tablist"
       class={`tabs tabs-box content-card-inset grid w-full grid-cols-2 border-(--archive-border-default) bg-(--archive-surface-sunken) p-1.5 ${
-        shouldShowCharacterTab(event.eventType) ? "sm:grid-cols-4" : "sm:grid-cols-3"
+        shouldShowCharacterTab(event.eventType) ? "@lg:grid-cols-4" : "@sm:grid-cols-3"
       }`}
     >
       {#each visibleTabs as tab, index (tab)}
@@ -141,7 +143,7 @@
           tabindex={resolvedTab === tab ? 0 : -1}
           class={`${getTabClass(tab)} ${
             tab === "background" && !shouldShowCharacterTab(event.eventType)
-              ? "col-span-2 sm:col-span-1"
+              ? "col-span-2 @sm:col-span-1"
               : ""
           }`}
           onclick={() => (activeTab = tab)}

@@ -421,7 +421,8 @@ const parseRewardResourceBoxDetail = (value: unknown): EventRewardResourceBoxDet
     seq: getNumber(node["seq"]),
     honor: parseRewardHonor(node["honor"]),
     resourceName: getString(node["resourceName"]),
-    resourceAssetbundleName: getString(node["resourceAssetbundleName"])
+    resourceAssetbundleName: getString(node["resourceAssetbundleName"]),
+    resourceRarity: getString(node["resourceRarity"])
   };
 };
 

@@ -27,6 +27,7 @@
     status = "ready",
     empty = false,
     query = "",
+    resetKey = null,
     pageIdentity,
     resultsLabel,
     onSearch,
@@ -36,6 +37,8 @@
     pageLabel,
     loadingPlaceholder,
     controls,
+    inlineSearch = false,
+    filters,
     children
   }: {
     labels: CatalogueLabels;
@@ -44,6 +47,8 @@
     status?: "ready" | "loading" | "error";
     empty?: boolean;
     query?: string;
+    /** Any change (for example a new category) also drops unsubmitted search text. */
+    resetKey?: string | null;
     pageIdentity?: Snippet;
     resultsLabel?: string;
     onSearch?: (query: string) => void;
@@ -53,13 +58,24 @@
     pageLabel?: string;
     loadingPlaceholder?: Snippet;
     controls?: Snippet;
+    /** Puts the search beside a few compact controls on large screens instead of above them. */
+    inlineSearch?: boolean;
+    /** Filters that narrow the chosen tab, in their own card below the tabs. */
+    filters?: Snippet;
     children: Snippet;
   } = $props();
 
   const searchInput = $state({ value: untrack(() => query) });
 
-  // Only query changes reset the draft; typing does not retrigger this effect.
+  // Emptying the field, by deleting the text or with its clear button, drops an applied
+  // search at once, so the URL never keeps a search the field no longer shows.
+  const clearAppliedSearchIfEmpty = (event: Event & { currentTarget: HTMLInputElement }): void => {
+    if (event.currentTarget.value.trim() === "" && query !== "") onSearch?.("");
+  };
+
+  // Only query and reset-key changes reset the draft; typing does not retrigger this effect.
   $effect(() => {
+    void resetKey;
     searchInput.value = query;
   });
 </script>
@@ -71,34 +87,50 @@
   {#if pageIdentity}{@render pageIdentity()}{/if}
 
   {#if controls}
+    <!-- Search gets its own row, so its width never depends on the controls beside it,
+         unless the page opts into one row for a few compact controls. -->
     <div
-      class="content-card-elevated flex flex-col gap-4 rounded-2xl border border-(--archive-border-subtle) p-4 lg:flex-row lg:items-end"
+      class="content-card-elevated flex flex-col gap-4 rounded-2xl border border-(--archive-border-subtle) p-4"
+      class:lg:flex-row={inlineSearch}
+      class:lg:items-end={inlineSearch}
     >
       {#if onSearch}
         <form
           role="search"
-          class="min-w-0 lg:flex-1"
+          class="w-full min-w-0 sm:max-w-md"
+          class:lg:flex-1={inlineSearch}
           onsubmit={(event) => {
             event.preventDefault();
             onSearch?.(searchInput.value.trim());
           }}
         >
-          <label class="flex flex-col gap-2 text-sm font-semibold">
-            <span>{labels.search}</span>
-            <span class="flex flex-wrap gap-2">
-              <input
-                type="search"
-                class="input min-h-11 min-w-0 flex-1 basis-48 bg-(--archive-surface-default)"
-                bind:value={searchInput.value}
-              />
-              <button type="submit" class="btn touch-target" disabled={status === "loading"}>
-                <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
-              </button>
-            </span>
-          </label>
+          <div class="flex gap-2">
+            <input
+              type="search"
+              class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
+              bind:value={searchInput.value}
+              placeholder={labels.search}
+              oninput={clearAppliedSearchIfEmpty}
+              aria-label={labels.search}
+            />
+            <button
+              type="submit"
+              class="btn btn-square touch-target size-11 shrink-0"
+              aria-label={labels.searchAction}
+              title={labels.searchAction}
+              disabled={status === "loading"}
+            >
+              <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />
+            </button>
+          </div>
         </form>
       {/if}
-      {@render controls()}
+      <div
+        class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+        class:lg:shrink-0={inlineSearch}
+      >
+        {@render controls()}
+      </div>
     </div>
   {:else if onSearch}
     <form
@@ -109,20 +141,35 @@
         onSearch?.(searchInput.value.trim());
       }}
     >
-      <label class="flex flex-col gap-2 text-sm font-semibold">
-        <span>{labels.search}</span>
-        <span class="flex flex-wrap gap-2">
-          <input
-            type="search"
-            class="input min-h-11 min-w-0 flex-1 basis-48 bg-(--archive-surface-default)"
-            bind:value={searchInput.value}
-          />
-          <button type="submit" class="btn touch-target" disabled={status === "loading"}>
-            <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />{labels.searchAction}
-          </button>
-        </span>
-      </label>
+      <div class="flex gap-2">
+        <input
+          type="search"
+          class="input min-h-11 min-w-0 flex-1 bg-(--archive-surface-default)"
+          bind:value={searchInput.value}
+          placeholder={labels.search}
+          oninput={clearAppliedSearchIfEmpty}
+          aria-label={labels.search}
+        />
+        <button
+          type="submit"
+          class="btn btn-square touch-target size-11 shrink-0"
+          aria-label={labels.searchAction}
+          title={labels.searchAction}
+          disabled={status === "loading"}
+        >
+          <Icon icon="mdi:magnify" class="size-5" aria-hidden="true" />
+        </button>
+      </div>
     </form>
+  {/if}
+
+  {#if filters}
+    <div
+      class="content-card-elevated rounded-2xl border border-(--archive-border-subtle) p-4"
+      data-swipe-region-skip
+    >
+      {@render filters()}
+    </div>
   {/if}
 
   <section

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("$env/dynamic/public", () => ({ env: {} }));
 
-import { getEventBannerAssetURL, getHonorAssetURL } from "./event-assets";
+import { getEventBannerAssetURL, getHonorAssetURL, getLeaderCardAssetURL } from "./event-assets";
 
 describe("getEventBannerAssetURL", () => {
   it("uses the confirmed regional banner path and bucket", () => {
@@ -58,5 +58,33 @@ describe("getHonorAssetURL", () => {
     ]) {
       expect(getHonorAssetURL(bundle, sprite, "jp", "https://assets.test")).toBeNull();
     }
+  });
+});
+
+describe("profile asset URLs", () => {
+  it("serves staged Bonds and Live Master sprites locally", () => {
+    expect(getHonorAssetURL("local/bonds-honor", "degree_bgBase", "jp", "")).toBe(
+      "/degree/bonds/degree_bgBase.png"
+    );
+    expect(getHonorAssetURL("local/live-master", "live_master_honor_star_1", "jp", "")).toBe(
+      "/degree/live-master/live_master_honor_star_1.png"
+    );
+  });
+
+  it("skips trimmed Bonds art caches like content-site", () => {
+    expect(getHonorAssetURL("bonds_honor/word", "word_01.png", "jp", "https://assets.test")).toBe(
+      "https://assets.test/sekai-jp-assets/bonds_honor/word/word_01.webp?v=2"
+    );
+  });
+
+  it("resolves leader card thumbnails and profile art by training state", () => {
+    expect(getLeaderCardAssetURL("thumbnail", "res001_no001", true, "tw", "https://a.test/")).toBe(
+      "https://a.test/sekai-tc-assets/thumbnail/chara/res001_no001_after_training.webp"
+    );
+    expect(
+      getLeaderCardAssetURL("member-small", "res001_no001", false, "jp", "https://a.test")
+    ).toBe("https://a.test/sekai-jp-assets/character/member_small/res001_no001/card_normal.webp");
+    expect(getLeaderCardAssetURL("thumbnail", "../x", false, "jp", "https://a.test")).toBeNull();
+    expect(getLeaderCardAssetURL("thumbnail", "res001_no001", false, "jp", "")).toBeNull();
   });
 });

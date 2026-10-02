@@ -1,19 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { HonorGroup } from "$lib/domain/honor";
 
-const { getHonorGroupsByRegionList, getHonorsByRegionById } = vi.hoisted(() => ({
+const {
+  getBondsHonorsByRegionList,
+  getGameCharacterUnitsByRegionList,
+  getHonorGroupsByRegionList,
+  getUnitProfilesByRegionList,
+  getVersionsByRegion
+} = vi.hoisted(() => ({
+  getBondsHonorsByRegionList: vi.fn(),
+  getGameCharacterUnitsByRegionList: vi.fn(),
   getHonorGroupsByRegionList: vi.fn(),
-  getHonorsByRegionById: vi.fn()
+  getUnitProfilesByRegionList: vi.fn(),
+  getVersionsByRegion: vi.fn()
 }));
 vi.mock("@platform/sekai-master-api-sdk", () => ({
+  getBondsHonorsByRegionList,
+  getGameCharacterUnitsByRegionList,
   getHonorGroupsByRegionList,
-  getHonorsByRegionById
+  getUnitProfilesByRegionList,
+  getVersionsByRegion
 }));
 
 import {
   createEmptyHonorListPage,
+  fetchBondsHonorViewData,
   fetchHonorListPage,
-  fetchHonorsByIds,
   parseHonorListQueryState,
   parseHonor,
   parseHonorGroupList
@@ -170,9 +182,132 @@ describe("honor catalogue adapter", () => {
     });
   });
 
+  it("loads the Bonds category as character-pair groups with its name search", async () => {
+    const bondsHonor = (id: number, groupId: number, rarity: string) => ({
+      id,
+      bondsGroupId: groupId,
+      name: `Pair ${groupId}`,
+      honorRarity: rarity,
+      levels: [{ level: 1, description: "Reach bond rank 5" }],
+      words: [
+        {
+          id: groupId * 1000 + 10,
+          seq: 3,
+          assetbundleName: `honorname_${groupId}_01`,
+          name: "Later"
+        },
+        {
+          id: groupId * 1000 + 1,
+          seq: 1,
+          assetbundleName: `honorname_${groupId}_default`,
+          name: "First",
+          description: "Reach bond rank 5"
+        }
+      ],
+      characterUnit1: { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
+      characterUnit2: { id: 26, gameCharacterId: 26, unit: "piapro", colorCode: "#3366cc" },
+      ...(groupId === 10102 ? { configurableUnitVirtualSinger: true } : {})
+    });
+    getBondsHonorsByRegionList.mockResolvedValueOnce({
+      data: {
+        items: [
+          bondsHonor(1212601, 12126, "low"),
+          bondsHonor(1212602, 12126, "middle"),
+          bondsHonor(1010201, 10102, "low")
+        ],
+        pagination: { page: 1, page_size: 72, total: 3, total_pages: 1, has_next: false }
+      }
+    });
+    getHonorGroupsByRegionList.mockResolvedValueOnce({
+      data: { ...createHonorResponse(1, 0).data, availableHonorTypes: ["event", "bonds"] }
+    });
+
+    const page = await fetchHonorListPage("https://master-api.test", "jp", 1, {
+      honorType: "bonds",
+      name: " 寒色 ",
+      sortBy: "id",
+      sortOrder: "desc"
+    });
+
+    expect(getBondsHonorsByRegionList.mock.calls[0]?.[0].query).toEqual({
+      page: 1,
+      page_size: 72,
+      sort_by: "id",
+      sort_order: "desc",
+      name: "寒色"
+    });
+    expect(getHonorGroupsByRegionList.mock.calls[0]?.[0].query).toEqual({ page: 1, page_size: 1 });
+    expect(page.items).toEqual([]);
+    expect(page.availableHonorTypes).toEqual(["event", "bonds"]);
+    expect(page.pagination).toMatchObject({ page: 1, pageSize: 72, hasNext: false, total: 3 });
+    expect(
+      page.bondsItems.map((group) => [group.id, group.honors.map((honor) => honor.id)])
+    ).toEqual([
+      [12126, [1212601, 1212602]],
+      [10102, [1010201]]
+    ]);
+    expect(page.bondsItems[0]?.honors[0]).toMatchObject({
+      name: "Pair 12126",
+      honorRarity: "low",
+      levels: [{ level: 1, description: "Reach bond rank 5" }],
+      units: [
+        { id: 21, colorCode: "#33ccbb" },
+        { id: 26, colorCode: "#3366cc" }
+      ]
+    });
+    // Words are sorted by seq, so the default word comes first.
+    expect(page.bondsItems[0]?.honors[0]?.words.map((word) => word.name)).toEqual([
+      "First",
+      "Later"
+    ]);
+    expect(page.bondsItems[0]?.honors[0]?.words.map((word) => word.description)).toEqual([
+      "Reach bond rank 5",
+      null
+    ]);
+    expect(page.bondsItems[0]?.honors[0]?.configurableUnitVirtualSinger).toBe(false);
+    expect(page.bondsItems[1]?.honors[0]?.configurableUnitVirtualSinger).toBe(true);
+  });
+
+  it("loads the character units and unit names for the Virtual Singer outfit option", async () => {
+    getGameCharacterUnitsByRegionList.mockResolvedValueOnce({
+      data: {
+        items: [
+          { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
+          { id: 27, gameCharacterId: 21, unit: "light_sound", colorCode: "#33ccbb" },
+          { id: 4, gameCharacterId: 4, unit: "light_sound", colorCode: "#bbdd22" },
+          { gameCharacterId: 5, unit: "idol" }
+        ],
+        pagination: { page: 1, page_size: 100, total: 4, total_pages: 1, has_next: false }
+      }
+    });
+    getVersionsByRegion.mockResolvedValueOnce({ data: { dataVersion: "6.8.0" } });
+    getUnitProfilesByRegionList.mockResolvedValueOnce({
+      data: {
+        items: [
+          { unit: "light_sound", unitName: "Leo/need" },
+          { unit: "piapro", unitName: "VIRTUAL SINGER" }
+        ]
+      }
+    });
+
+    await expect(fetchBondsHonorViewData("https://master-api.test", "jp")).resolves.toEqual({
+      characterUnitIds: { "21:piapro": 21, "21:light_sound": 27, "4:light_sound": 4 },
+      unitNames: { light_sound: "Leo/need", piapro: "VIRTUAL SINGER" }
+    });
+  });
+
+  it("leaves out the outfit option when the character units cannot be loaded", async () => {
+    getGameCharacterUnitsByRegionList.mockResolvedValueOnce({ error: { message: "down" } });
+    getVersionsByRegion.mockResolvedValueOnce({ data: { dataVersion: "6.8.0" } });
+    getUnitProfilesByRegionList.mockResolvedValueOnce({ data: { items: [] } });
+
+    await expect(fetchBondsHonorViewData("https://master-api.test", "kr")).resolves.toBeNull();
+  });
+
   it("creates an empty page with stable pagination defaults", () => {
     expect(createEmptyHonorListPage(4)).toEqual({
       items: [],
+      bondsItems: [],
       availableHonorTypes: [],
       pagination: {
         page: 4,
@@ -219,9 +354,10 @@ describe("honor catalogue adapter", () => {
       }
     });
 
+    // Bonds honors are a separate entity, always offered as a final category.
     await expect(fetchHonorListPage("https://master-api.test", "jp")).resolves.toMatchObject({
       items: [],
-      availableHonorTypes: ["event", "character"]
+      availableHonorTypes: ["event", "character", "bonds"]
     });
   });
 
@@ -234,13 +370,13 @@ describe("honor catalogue adapter", () => {
     });
 
     await expect(fetchHonorListPage("https://master-api.test", "jp")).resolves.toMatchObject({
-      availableHonorTypes: []
+      availableHonorTypes: ["bonds"]
     });
 
     getHonorGroupsByRegionList.mockResolvedValue(createHonorResponse(1, 0));
 
     await expect(fetchHonorListPage("https://master-api.test", "jp")).resolves.toMatchObject({
-      availableHonorTypes: []
+      availableHonorTypes: ["bonds"]
     });
   });
 
@@ -325,7 +461,8 @@ describe("honor catalogue adapter", () => {
 
     await expect(fetchHonorListPage("https://master-api.test", "jp")).resolves.toEqual({
       items: [],
-      availableHonorTypes: [],
+      bondsItems: [],
+      availableHonorTypes: ["bonds"],
       pagination: { page: 1, pageSize: PAGE_SIZE, hasNext: false, total: 0, totalPages: 0 }
     });
 
@@ -378,41 +515,5 @@ describe("honor catalogue adapter", () => {
     await expect(fetchHonorListPage("https://master-api.test", "jp", page)).rejects.toThrow(
       message
     );
-  });
-});
-
-describe("fetchHonorsByIds", () => {
-  it("loads each distinct honor once and leaves out the ones that fail", async () => {
-    getHonorsByRegionById.mockReset();
-    getHonorsByRegionById.mockImplementation(({ path }: { path: { id: number } }) =>
-      path.id === 9
-        ? Promise.resolve({ error: { status: 404 } })
-        : path.id === 8
-          ? Promise.reject(new Error("network down"))
-          : Promise.resolve({
-              data: {
-                id: path.id,
-                name: "一歌ファン",
-                honorRarity: "low",
-                assetbundleName: "honor_0001",
-                levels: [{ honorId: path.id, level: 1 }],
-                group: { id: 1, name: "一歌ファン", honorType: "character" }
-              }
-            })
-    );
-
-    const honors = await fetchHonorsByIds("https://master-api.test", "jp", [1, 1, 8, 9]);
-
-    expect(Object.keys(honors)).toEqual(["1"]);
-    expect(honors[1]).toMatchObject({
-      id: 1,
-      assetBundleName: "honor_0001",
-      group: { honorType: "character" }
-    });
-    expect(getHonorsByRegionById).toHaveBeenCalledTimes(3);
-    expect(getHonorsByRegionById).toHaveBeenCalledWith({
-      baseUrl: "https://master-api.test/api/v1",
-      path: { region: "jp", id: 1 }
-    });
   });
 });

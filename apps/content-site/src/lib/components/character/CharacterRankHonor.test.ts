@@ -1,46 +1,25 @@
-import { cleanup, render, screen } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "$lib/icons/mdi";
-import type { Honor } from "$lib/domain/honor";
 import type { CharacterRankReference } from "$lib/domain/mission";
+import type { TitlePreview } from "$lib/domain/title-preview";
 import CharacterRankCard from "./CharacterRankCard.svelte";
 
 vi.mock("$env/dynamic/public", () => ({
   env: { PUBLIC_REMOTE_ASSET_BASE_URL: "https://assets.test" }
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const t = (_key: string, fallback: string): string => fallback;
 
-const honor: Honor = {
-  id: 1,
-  assetBundleName: "honor_0001",
-  group: {
-    id: 1,
-    name: "Ichika fan",
-    honorType: "character",
-    backgroundAssetBundleName: null,
-    frameName: null
-  },
-  groupId: 1,
-  honorMissionType: null,
-  honorRarity: "low",
-  honorType: null,
-  honorTypeId: null,
-  levels: [1, 2].map((level) => ({
-    assetBundleName: null,
-    bonus: 0,
-    description: null,
-    honorId: 1,
-    honorRarity: null,
-    level
-  })),
-  name: "Ichika fan",
-  seq: 250
-};
-
-const rank = (characterRank: number, honorLevel: number | null): CharacterRankReference => ({
+const rank = (
+  characterRank: number,
+  title: { level: number; name?: string; rarity?: string } | null
+): CharacterRankReference => ({
   characterRank,
   powerBonusRate: 0.1,
   rewards: [
@@ -52,23 +31,51 @@ const rank = (characterRank: number, honorLevel: number | null): CharacterRankRe
         {
           resourceBoxId: 1000 + characterRank,
           resourceBoxPurpose: "character_rank_reward",
-          resourceId: honorLevel === null ? null : 1,
-          resourceLevel: honorLevel,
-          resourceQuantity: honorLevel === null ? 100 : 1,
-          resourceType: honorLevel === null ? "jewel" : "honor",
-          seq: 1
+          resourceId: title === null ? null : 1,
+          resourceLevel: title?.level ?? null,
+          resourceQuantity: title === null ? 100 : 1,
+          resourceType: title === null ? "jewel" : "honor",
+          seq: 1,
+          resourceName: title?.name ?? null,
+          resourceRarity: title?.rarity ?? null
         }
       ]
     }
   ]
 });
 
-describe("CharacterRankCard honor rewards", () => {
-  it("renders a known honor reward as its small degree at the granted level", async () => {
+const preview: TitlePreview = {
+  kind: "honor",
+  id: 1,
+  name: "Ichika fan",
+  rarity: "low",
+  subtitle: "Ichika fan",
+  degree: { kind: "normal", assetBundleName: "honor_0001", rarity: "low", level: 2 },
+  levels: [
+    { level: 1, description: "Reach character rank 5" },
+    { level: 2, description: "Reach character rank 10" }
+  ]
+};
+
+describe("CharacterRankCard title rewards", () => {
+  it("shows a title reward as its rarity icon and previews the title on click", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify(preview), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
     render(CharacterRankCard, {
       ranks: Promise.resolve({
-        items: [rank(1, null), rank(2, null), rank(3, null), rank(5, 1), rank(10, 2)],
-        honors: { 1: honor },
+        items: [
+          rank(1, null),
+          rank(2, null),
+          rank(5, { level: 1, name: "Ichika fan", rarity: "low" }),
+          rank(10, { level: 2, name: "Ichika fan", rarity: "low" })
+        ],
         loadFailed: false
       }),
       region: "jp",
@@ -76,14 +83,35 @@ describe("CharacterRankCard honor rewards", () => {
       t
     });
 
-    expect(await screen.findByRole("img", { name: "Ichika fan Lv.1" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: "Ichika fan Lv.2" })).toBeTruthy();
+    const titles = await screen.findAllByRole("button", { name: "Ichika fan ×1" });
+    expect(titles).toHaveLength(2);
+    expect(titles[1]?.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(titles[1]?.querySelector("img")?.getAttribute("src")).toMatch(
+      /thumbnail\/common_material\/honor_1\.webp$/
+    );
+
+    await fireEvent.click(titles[1]!);
+    expect(fetchMock).toHaveBeenCalledWith("/honors/jp/preview/honor/1?level=2");
+    const dialog = screen
+      .getAllByRole("dialog", { hidden: true })
+      .find((node) => (node as HTMLDialogElement).open)!;
+    expect(await within(dialog).findByRole("img", { name: "Ichika fan" })).toBeTruthy();
+    expect(within(dialog).getByText("Low")).toBeTruthy();
+    const rewarded = within(dialog).getByRole("rowheader", { name: "2" }).closest("tr");
+    expect(rewarded?.getAttribute("aria-current")).toBe("true");
+    expect(rewarded?.textContent).toContain("Reach character rank 10");
+    expect(
+      within(dialog)
+        .getByRole("rowheader", { name: "1" })
+        .closest("tr")
+        ?.hasAttribute("aria-current")
+    ).toBe(false);
   });
 
-  it("falls back to the honor label when the honor is unknown", async () => {
+  it("names a title reward by its type when the API gives no name", async () => {
     render(CharacterRankCard, {
       ranks: Promise.resolve({
-        items: [rank(1, null), rank(2, null), rank(5, 1)],
+        items: [rank(1, null), rank(2, null), rank(5, { level: 1 })],
         loadFailed: false
       }),
       region: "jp",
@@ -91,8 +119,6 @@ describe("CharacterRankCard honor rewards", () => {
       t
     });
 
-    expect(await screen.findByText("Rank 5")).toBeTruthy();
-    expect(screen.queryByRole("img", { name: /Lv\./ })).toBeNull();
-    expect(screen.getByText("Rank 5").closest("li")?.textContent).toContain("Honor");
+    expect(await screen.findByRole("button", { name: "Title ×1" })).toBeTruthy();
   });
 });

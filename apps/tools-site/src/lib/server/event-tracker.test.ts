@@ -33,7 +33,19 @@ describe("event tracker data layer", () => {
               userId: "155635838042374144",
               userName: "Player",
               eventId: "42",
-              timestamp: "2026-08-08T00:00:00Z"
+              timestamp: "2026-08-08T00:00:00Z",
+              userCard: { cardId: 670, defaultImage: "special_training" },
+              userProfileHonors: [
+                {
+                  seq: 2,
+                  honorId: 1192001,
+                  honorLevel: 3,
+                  bondsHonorWordId: 1192001,
+                  profileHonorType: "bonds",
+                  bondsHonorViewType: "reverse"
+                },
+                { seq: 1, honorId: 59, honorLevel: 1, profileHonorType: "normal" }
+              ]
             }
           ]
         }
@@ -45,7 +57,20 @@ describe("event tracker data layer", () => {
         userId: "155635838042374144",
         userName: "Player",
         eventId: 42,
-        timestamp: "2026-08-08T00:00:00Z"
+        timestamp: "2026-08-08T00:00:00Z",
+        leaderCard: { cardId: 670, trained: true, level: null, masterRank: 0 },
+        profileHonors: [
+          { kind: "normal", seq: 1, honorId: 59, level: 1 },
+          {
+            kind: "bonds",
+            seq: 2,
+            honorId: 1192001,
+            level: 3,
+            wordId: 1192001,
+            view: "reverse"
+          }
+        ],
+        honorMissions: []
       }
     ]);
   });
@@ -72,7 +97,10 @@ describe("event tracker data layer", () => {
         userId: "one",
         eventId: null,
         userName: null,
-        timestamp: "2026-08-08T00:00:00Z"
+        timestamp: "2026-08-08T00:00:00Z",
+        leaderCard: null,
+        profileHonors: [],
+        honorMissions: []
       },
       {
         rank: 1,
@@ -80,7 +108,10 @@ describe("event tracker data layer", () => {
         userId: "one",
         eventId: null,
         userName: null,
-        timestamp: "2026-08-08T00:30:00Z"
+        timestamp: "2026-08-08T00:30:00Z",
+        leaderCard: null,
+        profileHonors: [],
+        honorMissions: []
       }
     ]);
   });

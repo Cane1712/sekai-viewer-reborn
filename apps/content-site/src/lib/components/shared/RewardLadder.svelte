@@ -1,9 +1,4 @@
 <script lang="ts" generics="T">
-  import {
-    HonorDegree,
-    type HonorDegreeAssetResolver,
-    type HonorDegreeInput
-  } from "@platform/ui-shell";
   import RewardItem from "$lib/components/shared/RewardItem.svelte";
   import type { MissionResourceBoxDetail } from "$lib/domain/mission";
   import type { SupportedRegion } from "$lib/domain/regions";
@@ -20,7 +15,6 @@
     getNote,
     getDetails,
     resourceLabel,
-    honorDegree,
     labels
   }: {
     steps: T[];
@@ -34,12 +28,6 @@
     getNote?: (step: T) => string | null;
     getDetails: (step: T) => MissionResourceBoxDetail[];
     resourceLabel: (resourceType: string | null) => string;
-    /** Renders an honor reward as its small degree image when the honor is known. */
-    honorDegree?: (detail: MissionResourceBoxDetail) => {
-      honor: HonorDegreeInput;
-      resolveAsset: HonorDegreeAssetResolver;
-      label: string;
-    } | null;
     labels: {
       totals: string;
       milestones: string;
@@ -54,6 +42,8 @@
 
   const milestoneKeys = $derived(new Set(summary.milestones.map((step) => getKey(step))));
   const visibleSteps = $derived(showAll ? steps : summary.milestones);
+  // Rows per column for one to four columns; the container query picks the count that fits.
+  const rowsFor = (columns: number): number => Math.ceil(visibleSteps.length / columns);
 
   const formatNumber = (value: number): string =>
     new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
@@ -65,7 +55,7 @@
 {#snippet stepRow(step: T, milestone: boolean)}
   {@const note = getNote?.(step) ?? null}
   <li
-    class="flex break-inside-avoid items-center justify-between gap-3 border-b border-(--archive-border-subtle) py-2 text-sm"
+    class="flex items-center justify-between gap-3 border-b border-(--archive-border-subtle) py-2 text-sm"
     data-milestone={milestone ? "true" : undefined}
   >
     <span class="grid shrink-0 tabular-nums">
@@ -84,26 +74,14 @@
         : 'text-(--archive-text-muted)'}"
     >
       {#each getDetails(step) as detail, index (index)}
-        {@const degree = honorDegree?.(detail) ?? null}
-        {#if degree}
-          <HonorDegree
-            honor={degree.honor}
-            resolveAsset={degree.resolveAsset}
-            slot="sub1"
-            size="S"
-            label={degree.label}
-            class="shrink-0"
-          />
-        {:else}
-          <RewardItem
-            {detail}
-            {region}
-            label={itemLabel(detail)}
-            quantityLabel={detail.resourceQuantity === null
-              ? null
-              : `×${formatNumber(detail.resourceQuantity)}`}
-          />
-        {/if}
+        <RewardItem
+          {detail}
+          {region}
+          label={itemLabel(detail)}
+          quantityLabel={detail.resourceQuantity === null
+            ? null
+            : `×${formatNumber(detail.resourceQuantity)}`}
+        />
       {:else}
         {labels.noRewards}
       {/each}
@@ -125,6 +103,7 @@
             label={itemLabel(total.detail)}
             quantityLabel={`×${formatNumber(total.quantity)}`}
             size="lg"
+            preview={false}
           />
         </dd>
       </div>
@@ -132,14 +111,23 @@
   </dl>
 {/if}
 
-<section class="grid gap-2" aria-labelledby={`${idPrefix}-list-title`}>
+<section class="@container grid gap-2" aria-labelledby={`${idPrefix}-list-title`}>
   <h3 id={`${idPrefix}-list-title`} class="text-sm font-semibold text-(--archive-text-strong)">
     {showAll ? labels.all : labels.milestones}
   </h3>
   <!-- One column flow for both states: the column count follows the card width, and
-       showing every step only fills in the rows between milestones. -->
+       showing every step only fills in the rows between milestones. A column-flow grid keeps
+       that reading order without CSS columns, which split a reward tooltip across columns.
+       A column needs 17rem plus the 2rem gap, so two fit from 36rem, three from 55rem and
+       four from 74rem. -->
   {#if visibleSteps.length > 0}
-    <ul class="columns-[17rem] gap-x-8">
+    <ul
+      class="grid auto-cols-fr grid-flow-col grid-rows-[repeat(var(--rows-1),auto)] gap-x-8 @min-[36rem]:grid-rows-[repeat(var(--rows-2),auto)] @min-[55rem]:grid-rows-[repeat(var(--rows-3),auto)] @min-[74rem]:grid-rows-[repeat(var(--rows-4),auto)]"
+      style:--rows-1={rowsFor(1)}
+      style:--rows-2={rowsFor(2)}
+      style:--rows-3={rowsFor(3)}
+      style:--rows-4={rowsFor(4)}
+    >
       {#each visibleSteps as step (getKey(step))}
         {@render stepRow(step, milestoneKeys.has(getKey(step)))}
       {/each}

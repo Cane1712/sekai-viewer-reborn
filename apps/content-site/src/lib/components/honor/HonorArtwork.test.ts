@@ -38,6 +38,41 @@ const props = {
 };
 
 describe("HonorArtwork", () => {
+  it.each([
+    [254, "0 0 380 80"],
+    [200, "0 0 380 80"],
+    [199, "0 0 180 80"]
+  ])("draws a %ipx container with the %s slot", async (width, viewBox) => {
+    let resize: ((entries: { contentRect: { width: number } }[]) => void) | undefined;
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: typeof resize) {
+          resize = callback;
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    render(HonorArtwork, props);
+    resize?.([{ contentRect: { width } }]);
+    await tick();
+
+    expect(screen.getByRole("img", { name: "Event honor" }).getAttribute("viewBox")).toBe(viewBox);
+  });
+
+  it("scales the main slot to its container, up to the full 380px title", async () => {
+    const { container } = render(HonorArtwork, props);
+    await tick();
+
+    const frame = container.firstElementChild as HTMLElement;
+    expect(frame.classList).toContain("max-w-95");
+    expect(frame.classList).toContain("aspect-19/4");
+    const title = screen.getByRole("img", { name: "Event honor" });
+    expect(title.getAttribute("viewBox")).toBe("0 0 380 80");
+    expect(title.classList).toContain("w-full!");
+  });
+
   it("renders a no-frameName catalogue honor body then local frame in both responsive slots", async () => {
     let resize!: (entries: { contentRect: { width: number } }[]) => void;
     vi.stubGlobal(
@@ -79,7 +114,7 @@ describe("HonorArtwork", () => {
     });
     for (const [width, slot, frameSize] of [
       [268, "main", "m"],
-      [200, "sub", "s"]
+      [180, "sub", "s"]
     ] as const) {
       resize([{ contentRect: { width } }]);
       await tick();
@@ -115,7 +150,7 @@ describe("HonorArtwork", () => {
     );
     const { container, unmount } = render(HonorArtwork, props);
     expect(container.querySelector("image")).toBeNull();
-    resize([{ contentRect: { width: 200 } }]);
+    resize([{ contentRect: { width: 180 } }]);
     intersect([{ isIntersecting: true }]);
     await tick();
     expect(screen.getByRole("img").getAttribute("viewBox")).toBe("0 0 180 80");

@@ -158,7 +158,8 @@ const parseResourceBoxDetail = (payload: unknown): MissionResourceBoxDetail | nu
     resourceType: getString(root.resourceType),
     seq: getNumber(root.seq),
     resourceName: getString(root.resourceName),
-    resourceAssetbundleName: getString(root.resourceAssetbundleName)
+    resourceAssetbundleName: getString(root.resourceAssetbundleName),
+    resourceRarity: getString(root.resourceRarity)
   };
 };
 

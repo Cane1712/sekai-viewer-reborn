@@ -1,35 +1,29 @@
-export type HonorGroupMetadata = {
-  id: number | null;
-  name: string | null;
-  honorType: string | null;
-  backgroundAssetBundleName: string | null;
-  frameName: string | null;
-};
+import type {
+  Honor,
+  HonorGroupMetadata,
+  BondsHonor
+} from "@platform/ui-shell/honor-degree-adapter";
 
-export type HonorLevel = {
-  assetBundleName: string | null;
-  bonus: number | null;
-  description: string | null;
-  honorId: number | null;
-  honorRarity: string | null;
-  level: number | null;
-};
-
-export type Honor = {
-  id: number;
-  assetBundleName: string | null;
-  group: HonorGroupMetadata | null;
-  groupId: number | null;
-  honorMissionType: string | null;
-  honorRarity: string | null;
-  honorType: string | null;
-  honorTypeId: number | null;
-  levels: HonorLevel[];
-  name: string | null;
-  seq: number | null;
-};
+export {
+  defaultBondsHonorView,
+  type BondsHonor,
+  type BondsHonorUnit,
+  type BondsHonorView,
+  type BondsHonorViewData,
+  type BondsHonorWord,
+  type Honor,
+  type HonorGroupMetadata,
+  type HonorLevel
+} from "@platform/ui-shell/honor-degree-adapter";
 
 export type HonorGroup = HonorGroupMetadata & {
   id: number;
   honors: Honor[];
+};
+
+/** One character pair (bonds group) and its honors, one per rarity. */
+export type BondsHonorGroup = {
+  id: number;
+  name: string | null;
+  honors: BondsHonor[];
 };

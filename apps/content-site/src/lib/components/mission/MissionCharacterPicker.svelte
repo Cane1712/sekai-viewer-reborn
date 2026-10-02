@@ -1,6 +1,7 @@
 <script lang="ts">
   import CharacterAvatar from "$lib/components/shared/CharacterAvatar.svelte";
   import type { MissionCharacterOption } from "$lib/domain/mission";
+  import { resolveUnitLogoUrl } from "$lib/domain/unit-icon";
 
   let {
     characters,
@@ -8,7 +9,6 @@
     selectedId,
     getImageSrc,
     labels,
-    profileHref = null,
     onSelect,
     onRetry
   }: {
@@ -22,14 +22,9 @@
       error: string;
       retry: string;
       otherGroup: string;
-      /** Names the selected character; `{name}` is replaced. */
-      selected: string;
-      profile: string;
-      /** Small screens only: reopens the collapsed grid after a character is chosen. */
+      /** Small screens only: names the selected avatar that reopens the collapsed grid. */
       change: string;
-      collapse: string;
     };
-    profileHref?: string | null;
     onSelect: (id: number) => void;
     onRetry: () => void;
   } = $props();
@@ -60,7 +55,44 @@
     )
   );
   const selected = $derived(characters.find((character) => character.id === selectedId) ?? null);
+  // Units whose logo failed to load fall back to their name.
+  let failedLogos = $state<string[]>([]);
+  const selectedGroup = $derived(
+    groups.find((group) => group.characters.some((character) => character.id === selectedId)) ??
+      null
+  );
 </script>
+
+<!-- Each unit shows its logo, named for assistive technology; without one, its name. -->
+{#snippet unitName(group: { key: string; label: string })}
+  {@const logo = failedLogos.includes(group.key) ? null : resolveUnitLogoUrl(group.key)}
+  {#if logo}
+    <img
+      src={logo}
+      alt={group.label}
+      class="h-9 w-auto max-w-32 object-contain"
+      loading="lazy"
+      decoding="async"
+      onerror={() => (failedLogos = [...failedLogos, group.key])}
+    />
+  {:else}
+    <p class="text-xs wrap-anywhere text-(--archive-text-muted)">{group.label}</p>
+  {/if}
+{/snippet}
+
+<!-- Avatars stay grey until hovered, focused, or chosen; the chosen one also keeps its ring. -->
+{#snippet avatar(character: MissionCharacterOption, active: boolean)}
+  <CharacterAvatar
+    src={getImageSrc(character.id)}
+    characterId={character.id}
+    label={character.name}
+    variant="sm"
+    class="size-full! transition-[filter] duration-180 motion-reduce:transition-none in-data-low-motion:transition-none {active
+      ? 'grayscale-0'
+      : 'grayscale group-hover:grayscale-0 group-focus-visible:grayscale-0'}"
+    decorative
+  />
+{/snippet}
 
 <section class="grid min-w-0 gap-3" aria-labelledby={titleId}>
   <h2 id={titleId} class="text-sm font-semibold text-(--archive-text-strong)">{labels.title}</h2>
@@ -88,15 +120,13 @@
     >
       {#each groups as group (group.key)}
         <div class="contents sm:grid sm:grid-cols-[8rem_minmax(0,1fr)] sm:items-center sm:gap-2">
-          <p class="sr-only text-xs wrap-anywhere text-(--archive-text-muted) sm:not-sr-only">
-            {group.label}
-          </p>
+          <div class="sr-only sm:not-sr-only">{@render unitName(group)}</div>
           <ul class="contents sm:flex sm:flex-wrap sm:gap-2" aria-label={group.label}>
             {#each group.characters as character (character.id)}
               <li class="last:mr-2 sm:last:mr-0">
                 <button
                   type="button"
-                  class="btn btn-circle btn-ghost size-11 p-0 sm:size-12"
+                  class="group btn btn-circle btn-ghost size-11 p-0 sm:size-12"
                   class:ring-2={character.id === selectedId}
                   class:ring-primary={character.id === selectedId}
                   aria-pressed={character.id === selectedId}
@@ -107,14 +137,7 @@
                     onSelect(character.id);
                   }}
                 >
-                  <CharacterAvatar
-                    src={getImageSrc(character.id)}
-                    characterId={character.id}
-                    label={character.name}
-                    variant="sm"
-                    class="size-full!"
-                    decorative
-                  />
+                  {@render avatar(character, character.id === selectedId)}
                 </button>
               </li>
             {/each}
@@ -122,25 +145,23 @@
         </div>
       {/each}
     </div>
-    {#if selected}
-      <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <span class="font-medium wrap-anywhere text-(--archive-text-strong)">
-          {labels.selected.replace("{name}", selected.name)}
-        </span>
+    {#if collapsed && selected}
+      <!-- Small screens: once a character is chosen, only their unit and avatar stay; the
+           avatar reopens the grid, and choosing a character collapses it again. -->
+      <div class="grid grid-cols-[8rem_auto] items-center gap-2 sm:hidden">
+        {@render unitName(selectedGroup ?? { key: "", label: labels.otherGroup })}
         <button
           type="button"
-          class="btn btn-link touch-target px-0 sm:hidden"
+          class="group btn btn-circle btn-ghost size-11 p-0 ring-2 ring-primary"
+          aria-label={`${labels.change}: ${selected.name}`}
+          title={selected.name}
           aria-controls={gridId}
-          aria-expanded={!collapsed}
-          onclick={() => (expanded = !expanded)}
+          aria-expanded="false"
+          onclick={() => (expanded = true)}
         >
-          {collapsed ? labels.change : labels.collapse}
+          {@render avatar(selected, true)}
         </button>
-        {#if profileHref}
-          <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-          <a class="link touch-target link-primary" href={profileHref}>{labels.profile}</a>
-        {/if}
-      </p>
+      </div>
     {/if}
   {/if}
 </section>

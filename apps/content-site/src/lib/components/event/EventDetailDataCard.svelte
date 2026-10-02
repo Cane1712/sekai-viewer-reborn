@@ -16,6 +16,7 @@
   import { resolveCardTrained } from "$lib/components/card/card-presentation";
   import CharacterAvatar from "$lib/components/shared/CharacterAvatar.svelte";
   import AssetImage from "$lib/components/shared/AssetImage.svelte";
+  import RewardItem from "$lib/components/shared/RewardItem.svelte";
   import HonorSummary from "$lib/components/honor/HonorSummary.svelte";
   import { CardThumbnail, UnitIconBadge } from "@platform/ui-shell";
   import { formatDisplayDateTime } from "$lib/time/date-time";
@@ -31,6 +32,11 @@
   } from "$lib/domain/event-detail";
   import type { SupportedRegion } from "$lib/domain/regions";
   import Icon from "@iconify/svelte";
+  import {
+    REWARD_CHIP_CLASS,
+    REWARD_CHIP_ICON_CLASS,
+    REWARD_CHIP_QUANTITY_CLASS
+  } from "$lib/styles/reward-chip";
 
   type SummaryItem = {
     key: string;
@@ -172,60 +178,7 @@
     baseBonusRate: number | null;
     attrBonuses: BonusDeckEntry[];
   };
-  type HonorAssetFrame = {
-    src: string;
-    fallbackSrc: string | null;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  };
-  type HonorAssetVariant = "sub" | "main";
-  type HonorAssetVariantConfig = {
-    assetName: HonorAssetVariant;
-    frameSize: "s" | "m";
-    canvas: {
-      width: number;
-      height: number;
-    };
-    rarityOneFrame: {
-      x: number;
-      width: number;
-    };
-    overlay: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    };
-  };
-  type HonorAssetPreview = {
-    config: HonorAssetVariantConfig;
-    frame: HonorAssetFrame;
-    baseSrc: string | null;
-    overlaySrc: string | null;
-    isFullBleedOverlay: boolean;
-  };
-  type HonorAssetPreviews = Record<HonorAssetVariant, HonorAssetPreview>;
   type RarityBonusRate = NonNullable<EventRelatedData["bonuses"]>["rarityBonusRates"][number];
-  const honorPreviewCanvasHeight = 80;
-  const honorAssetVariantConfigs = {
-    sub: {
-      assetName: "sub",
-      frameSize: "s",
-      canvas: { width: 180, height: honorPreviewCanvasHeight },
-      rarityOneFrame: { x: 8, width: 164 },
-      overlay: { x: 11, y: 40, width: 158, height: 40 }
-    },
-    main: {
-      assetName: "main",
-      frameSize: "m",
-      canvas: { width: 380, height: honorPreviewCanvasHeight },
-      rarityOneFrame: { x: 8, width: 364 },
-      overlay: { x: 200, y: 0, width: 180, height: 78 }
-    }
-  } satisfies Record<HonorAssetVariant, HonorAssetVariantConfig>;
-  const honorRarityNumber: Record<string, number> = { low: 1, middle: 2, high: 3, highest: 4 };
   const standardCardAttrs = ["cool", "cute", "happy", "mysterious", "pure"] as const;
 
   const formatPercent = (value: number | null): string | null =>
@@ -550,121 +503,9 @@
       detail.resourceLevel !== null ? ` Lv.${formatNumber(detail.resourceLevel)}` : "";
     return `${typeLabel}${idLabel}${levelLabel}`;
   };
-  const getHonorLevelAssetBundleName = (detail: EventRewardResourceBoxDetail): string | null => {
-    const honor = detail.honor;
-    if (!honor) {
-      return null;
-    }
-
-    if (honor.assetBundleName) {
-      return honor.assetBundleName;
-    }
-
-    const matchingLevel = honor.levels.find((level) => level.level === detail.resourceLevel);
-    if (matchingLevel?.assetBundleName) {
-      return matchingLevel.assetBundleName;
-    }
-
-    return honor.levels.find((level) => level.assetBundleName)?.assetBundleName ?? null;
-  };
-  const getHonorFrameGeometry = (
-    rarityNumber: number,
-    config: HonorAssetVariantConfig
-  ): Omit<HonorAssetFrame, "src" | "fallbackSrc"> =>
-    rarityNumber === 1
-      ? {
-          x: config.rarityOneFrame.x,
-          y: 0,
-          width: config.rarityOneFrame.width,
-          height: config.canvas.height
-        }
-      : { x: 0, y: 0, width: config.canvas.width, height: config.canvas.height };
-  const getHonorAssetPreview = (
-    detail: EventRewardResourceBoxDetail,
-    config: HonorAssetVariantConfig
-  ): HonorAssetPreview | null => {
-    const honor = detail.honor;
-    if (!isHonorRewardDetail(detail) || !honor) {
-      return null;
-    }
-
-    const assetRegion = region as AssetServer;
-    const honorType = honor.group?.honorType ?? honor.honorType;
-    const assetBundleName = getHonorLevelAssetBundleName(detail);
-    const backgroundAssetBundleName = honor.group?.backgroundAssetBundleName ?? assetBundleName;
-    const rarity =
-      honor.honorRarity ??
-      honor.levels.find((level) => level.level === detail.resourceLevel)?.honorRarity ??
-      honor.levels.find((level) => level.honorRarity)?.honorRarity ??
-      "low";
-    const rarityNumber = honorRarityNumber[rarity] ?? 1;
-    const frameName = honor.group?.frameName;
-
-    const defaultFrameSrc = asset(`/degree/frame_degree_${config.frameSize}_${rarityNumber}.png`);
-    let frameSrc = defaultFrameSrc;
-    let frameFallbackSrc: string | null = null;
-    if (
-      frameName &&
-      (rarity === "highest" ||
-        rarity === "high" ||
-        (honorType === "birthday" && rarity === "middle"))
-    ) {
-      frameSrc = getRemoteAssetEndpointURL(
-        `honor_frame/${frameName}/frame_degree_${config.frameSize}_${rarityNumber}.webp`,
-        assetRegion
-      );
-      frameFallbackSrc = defaultFrameSrc;
-    }
-
-    let baseSrc: string | null = null;
-    if (honorType === "rank_match" && backgroundAssetBundleName) {
-      baseSrc = getRemoteAssetEndpointURL(
-        `rank_live/honor/${backgroundAssetBundleName}/degree_${config.assetName}.webp`,
-        assetRegion
-      );
-    } else if (backgroundAssetBundleName) {
-      baseSrc = getRemoteAssetEndpointURL(
-        `honor/${backgroundAssetBundleName}/degree_${config.assetName}.webp`,
-        assetRegion
-      );
-    }
-
-    let overlaySrc: string | null = null;
-    if ((honorType === "event" || honorType === "event_point") && assetBundleName) {
-      overlaySrc = getRemoteAssetEndpointURL(
-        `honor/${assetBundleName}/rank_${config.assetName}.webp`,
-        assetRegion
-      );
-    } else if (honorType === "rank_match" && assetBundleName) {
-      overlaySrc = getRemoteAssetEndpointURL(
-        `rank_live/honor/${assetBundleName}/${config.assetName}.webp`,
-        assetRegion
-      );
-    } else if (honor.honorMissionType && assetBundleName) {
-      overlaySrc = getRemoteAssetEndpointURL(`honor/${assetBundleName}/scroll.webp`, assetRegion);
-    }
-
-    const isFullBleedOverlay = assetBundleName ? /_cp\d+$/.test(assetBundleName) : false;
-
-    return {
-      config,
-      baseSrc,
-      frame: {
-        src: frameSrc,
-        ...getHonorFrameGeometry(rarityNumber, config),
-        fallbackSrc: frameFallbackSrc
-      },
-      overlaySrc,
-      isFullBleedOverlay
-    };
-  };
-  const getHonorAssetPreviews = (
-    detail: EventRewardResourceBoxDetail
-  ): HonorAssetPreviews | null => {
-    const sub = getHonorAssetPreview(detail, honorAssetVariantConfigs.sub);
-    const main = getHonorAssetPreview(detail, honorAssetVariantConfigs.main);
-
-    return sub && main ? { sub, main } : null;
+  const getTitleRewardId = (detail: EventRewardResourceBoxDetail): number | null => {
+    const id = Number(detail.resourceId);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
   };
   const getRewardDetailImageSrc = (detail: EventRewardResourceBoxDetail): string | null => {
     if (!detail.resourceType) {
@@ -745,7 +586,7 @@
 {#snippet rewardDetailChip(detail: EventRewardResourceBoxDetail, _index: number)}
   {@const imageSrc = getRewardDetailImageSrc(detail)}
   <span
-    class="badge badge-outline h-auto min-h-9 max-w-full gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
+    class={REWARD_CHIP_CLASS}
     title={getRewardDetailLabel(detail)}
     aria-label={getRewardDetailLabel(detail)}
   >
@@ -753,108 +594,31 @@
       <img
         src={imageSrc}
         alt=""
-        class="size-6 shrink-0 object-contain"
+        class={REWARD_CHIP_ICON_CLASS}
         loading="lazy"
         decoding="async"
         onerror={hideBrokenImage}
       />
     {:else}
-      <Icon
-        icon={getRewardDetailFallbackIcon(detail)}
-        class="size-4 shrink-0 opacity-70"
-        aria-hidden="true"
-      />
+      <span class="grid {REWARD_CHIP_ICON_CLASS} place-items-center" aria-hidden="true">
+        <Icon icon={getRewardDetailFallbackIcon(detail)} class="size-6 opacity-70" />
+      </span>
     {/if}
     {#if getRewardDetailQuantity(detail)}
-      <span class="shrink-0 text-primary">×{getRewardDetailQuantity(detail)}</span>
+      <span class={REWARD_CHIP_QUANTITY_CLASS}>×{getRewardDetailQuantity(detail)}</span>
     {/if}
   </span>
 {/snippet}
 
 {#snippet honorRewardDetail(detail: EventRewardResourceBoxDetail)}
-  {@const honorPreviews = getHonorAssetPreviews(detail)}
-  {#if honorPreviews}
-    <span
-      class="inline-flex max-w-full flex-col gap-1"
-      title={getRewardDetailLabel(detail)}
-      aria-label={getRewardDetailLabel(detail)}
-    >
-      <span class="block h-10 sm:hidden" aria-hidden="true">
-        {@render honorAssetPreview(honorPreviews.sub)}
-      </span>
-      <span class="hidden h-12 sm:block" aria-hidden="true">
-        {@render honorAssetPreview(honorPreviews.main)}
-      </span>
-      <span class="text-xs text-(--archive-text-muted)">{getRewardDetailLabel(detail)}</span>
-    </span>
-  {:else}
-    <span
-      class="badge badge-outline h-auto min-h-9 shrink-0 gap-1.5 border-(--archive-border-default) bg-(--archive-surface-raised) px-2.5 py-1.5 text-xs font-semibold text-(--archive-text-default)"
-      title={getRewardDetailLabel(detail)}
-      aria-label={getRewardDetailLabel(detail)}
-    >
-      <Icon
-        icon={getRewardDetailFallbackIcon(detail)}
-        class="size-4 shrink-0 opacity-70"
-        aria-hidden="true"
-      />
-      <span>{getRewardDetailLabel(detail)}</span>
-    </span>
-  {/if}
+  <!-- Title rewards show the in-game title icon; it opens a preview of the title. -->
+  <RewardItem
+    detail={{ ...detail, resourceId: getTitleRewardId(detail) }}
+    {region}
+    label={detail.resourceName ?? getRewardDetailLabel(detail)}
+    quantityLabel={detail.resourceQuantity === null ? null : `×${getRewardDetailQuantity(detail)}`}
+  />
 {/snippet}
-
-{#snippet honorAssetPreview(honorPreview: HonorAssetPreview)}
-  <svg
-    class="block h-full max-w-full w-auto"
-    viewBox={`0 0 ${honorPreview.config.canvas.width} ${honorPreview.config.canvas.height}`}
-  >
-    {#if honorPreview.baseSrc}
-      <image
-        href={honorPreview.baseSrc}
-        x="0"
-        y="0"
-        width={honorPreview.config.canvas.width}
-        height={honorPreview.config.canvas.height}
-        preserveAspectRatio="none"
-        onerror={hideBrokenImage}
-      />
-    {/if}
-    <image
-      href={honorPreview.frame.src}
-      x={honorPreview.frame.x}
-      y={honorPreview.frame.y}
-      width={honorPreview.frame.width}
-      height={honorPreview.frame.height}
-      preserveAspectRatio="none"
-      data-fallback-src={honorPreview.frame.fallbackSrc}
-      onerror={hideBrokenImage}
-    />
-    {#if honorPreview.overlaySrc}
-      {#if honorPreview.isFullBleedOverlay}
-        <image
-          href={honorPreview.overlaySrc}
-          x="0"
-          y="0"
-          width={honorPreview.config.canvas.width}
-          height={honorPreview.config.canvas.height}
-          preserveAspectRatio="none"
-          onerror={hideBrokenImage}
-        />
-      {:else}
-        <image
-          href={honorPreview.overlaySrc}
-          x={honorPreview.config.overlay.x}
-          y={honorPreview.config.overlay.y}
-          width={honorPreview.config.overlay.width}
-          height={honorPreview.config.overlay.height}
-          preserveAspectRatio="xMidYMid meet"
-          onerror={hideBrokenImage}
-        />
-      {/if}
-    {/if}
-  </svg>
-{/snippet}
-
 {#snippet bonusCharacterPanel(item: BonusCharacterItem)}
   {@const displayName = getBonusDisplayName(item)}
   {@const characterAccentColor = getBonusCharacterAccentColor(item)}

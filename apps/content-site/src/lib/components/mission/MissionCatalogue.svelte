@@ -194,14 +194,15 @@
 {/snippet}
 
 {#snippet controls()}
-  <div class="flex min-w-0 flex-1 flex-col gap-4" data-swipe-region-skip>
-    <div class="flex min-w-0 flex-wrap gap-2" role="tablist" aria-label={familyLabel}>
+  <div class="min-w-0 flex-1" data-swipe-region-skip>
+    <!-- Phones fit the four tabs on one row by trimming their padding and gap. -->
+    <div class="flex min-w-0 flex-wrap gap-1 sm:gap-2" role="tablist" aria-label={familyLabel}>
       {#each familyOptions as family (family ?? "all")}
         <button
           type="button"
           class:btn-primary={selectedFamily === family}
           class:btn-ghost={selectedFamily !== family}
-          class="btn touch-target max-w-full rounded-xl whitespace-normal wrap-break-word"
+          class="btn touch-target max-w-full flex-auto rounded-xl px-3 whitespace-normal wrap-break-word sm:flex-none sm:px-4"
           role="tab"
           aria-selected={selectedFamily === family}
           aria-controls={resultsId}
@@ -211,12 +212,11 @@
         </button>
       {/each}
     </div>
-    {#if filters}{@render filters()}{/if}
   </div>
 {/snippet}
 
 <div id={resultsId}>
-  <CatalogueFrame {...frame} empty={!content && groups.length === 0} {controls}>
+  <CatalogueFrame {...frame} empty={!content && groups.length === 0} {controls} {filters}>
     {#snippet loadingPlaceholder()}
       <div class="flex flex-col gap-4">
         {#each Array.from({ length: loadingGroupCount }) as _, index (index)}
@@ -235,8 +235,12 @@
       {:else}
         <div class={overview ? "grid min-w-0 gap-4 lg:grid-cols-3" : "flex min-w-0 flex-col gap-4"}>
           {#each groups as group (group.family)}
+            <!-- A group with its own body (the character missions tiles) sits straight in the
+                 results area; every other group keeps its card. -->
             <section
-              class="content-card-shell min-w-0 rounded-2xl p-4"
+              class={!overview && groupBody
+                ? "min-w-0"
+                : "content-card-shell min-w-0 rounded-2xl p-4"}
               aria-busy={group.status === "loading" ? "true" : undefined}
             >
               <div class="pb-4">{@render heading(group)}</div>

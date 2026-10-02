@@ -2,6 +2,16 @@
   import type { MissionResourceBoxDetail } from "$lib/domain/mission";
   import type { SupportedRegion } from "$lib/domain/regions";
   import { getRewardItemIcon } from "$lib/domain/reward-item";
+  import { titlePreviewKindOf } from "$lib/domain/title-preview";
+  import { ImagePreviewDialog } from "@platform/ui-shell";
+  import {
+    REWARD_CHIP_BUTTON_CLASS,
+    REWARD_CHIP_CLASS,
+    REWARD_CHIP_ICON_CLASS,
+    REWARD_CHIP_QUANTITY_CLASS
+  } from "$lib/styles/reward-chip";
+  import TitlePreviewDialog from "./TitlePreviewDialog.svelte";
+  import { getTitlePreviewLabels } from "./title-preview-labels";
 
   let {
     detail,
@@ -9,19 +19,23 @@
     label,
     quantityLabel = null,
     size = "md",
+    preview = true,
     class: className = ""
   }: {
     detail: Pick<
       MissionResourceBoxDetail,
       "resourceType" | "resourceId" | "resourceAssetbundleName"
-    >;
+    > &
+      Partial<Pick<MissionResourceBoxDetail, "resourceLevel" | "resourceRarity">>;
     region: SupportedRegion;
     /** The item's name: the icon's tooltip and accessible label, or the text without an icon. */
     label: string;
     /** Already formatted, for example "×100". */
     quantityLabel?: string | null;
-    /** `lg` suits standalone totals; `md` suits reward rows. */
+    /** `md` frames the item as a reward chip for reward rows; `lg` suits standalone totals. */
     size?: "md" | "lg";
+    /** A title or stamp reward opens its preview; off for totals that sum several titles. */
+    preview?: boolean;
     class?: string;
   } = $props();
 
@@ -42,35 +56,102 @@
   const src = $derived(
     !icon ? null : failures === 0 ? icon.src : failures === 1 ? icon.fallbackSrc : null
   );
+  // A title reward opens a preview of the title itself.
+  const titleKind = $derived(
+    !preview || detail.resourceId === null ? null : titlePreviewKindOf(detail.resourceType)
+  );
+  let titlePreview: TitlePreviewDialog | null = $state(null);
+  // A stamp reward opens its image in the shared image preview.
+  const stampSrc = $derived(preview && detail.resourceType === "stamp" ? src : null);
+  let stampPreviewOpen = $state(false);
+  const closeLabel = $derived(getTitlePreviewLabels()().close);
+  const showPreview = (): void => {
+    if (titleKind) titlePreview?.show();
+    else stampPreviewOpen = true;
+  };
+  const accessibleLabel = $derived(quantityLabel ? `${label} ${quantityLabel}` : label);
+  const chip = $derived(size === "md");
 </script>
 
-{#if src}
+{#snippet iconImage()}
+  <img
+    src={src ?? undefined}
+    alt=""
+    class={chip ? REWARD_CHIP_ICON_CLASS : "size-14 shrink-0 object-contain"}
+    loading="lazy"
+    decoding="async"
+    onerror={() => (failures += 1)}
+  />
+  {#if quantityLabel}<span
+      class={chip
+        ? REWARD_CHIP_QUANTITY_CLASS
+        : "text-lg font-semibold text-(--archive-text-strong) tabular-nums"}
+      aria-hidden="true">{quantityLabel}</span
+    >{/if}
+{/snippet}
+
+{#if (titleKind && detail.resourceId !== null) || stampSrc}
+  <button
+    type="button"
+    class="tooltip align-middle {chip
+      ? REWARD_CHIP_BUTTON_CLASS
+      : 'btn btn-ghost h-auto min-h-0 gap-1 p-0.5 font-normal'} {className}"
+    data-tip={label}
+    aria-label={accessibleLabel}
+    aria-haspopup="dialog"
+    onclick={showPreview}
+  >
+    {#if src}
+      {@render iconImage()}
+    {:else}
+      <span class="min-w-0 wrap-anywhere">{label}</span>
+      {#if quantityLabel}<span class={chip ? REWARD_CHIP_QUANTITY_CLASS : "shrink-0 tabular-nums"}
+          >{quantityLabel}</span
+        >{/if}
+    {/if}
+  </button>
+  {#if titleKind && detail.resourceId !== null}
+    <TitlePreviewDialog
+      bind:this={titlePreview}
+      {region}
+      kind={titleKind}
+      id={detail.resourceId}
+      level={detail.resourceLevel ?? null}
+      fallbackName={label}
+    />
+  {:else if stampSrc}
+    <ImagePreviewDialog
+      bind:open={stampPreviewOpen}
+      src={stampSrc}
+      alt={label}
+      {closeLabel}
+      formatOptions={["webp", "png"]}
+      dialogBoxClass="relative flex w-fit max-w-[96vw] items-center justify-center overflow-hidden rounded-box bg-base-100/96 p-2 md:p-4"
+      dialogImageClass="h-auto max-h-[88vh] w-auto max-w-full object-contain"
+    />
+  {/if}
+{:else if src}
   <!-- A game-asset icon may stand alone (DESIGN.md, Focus and accessibility): the tooltip
        and the accessible label carry the item's name. -->
   <span
-    class="tooltip inline-flex shrink-0 items-center gap-1 align-middle {className}"
+    class="tooltip inline-flex shrink-0 items-center align-middle {chip
+      ? REWARD_CHIP_CLASS
+      : 'gap-1'} {className}"
     data-tip={label}
     role="img"
-    aria-label={quantityLabel ? `${label} ${quantityLabel}` : label}
+    aria-label={accessibleLabel}
   >
-    <img
-      {src}
-      alt=""
-      class="shrink-0 object-contain {size === 'lg' ? 'size-14' : 'size-12'}"
-      loading="lazy"
-      decoding="async"
-      onerror={() => (failures += 1)}
-    />
-    {#if quantityLabel}<span
-        class="tabular-nums {size === 'lg'
-          ? 'text-lg font-semibold text-(--archive-text-strong)'
-          : ''}"
-        aria-hidden="true">{quantityLabel}</span
-      >{/if}
+    {@render iconImage()}
   </span>
 {:else}
-  <span class="inline-flex min-w-0 items-center gap-1.5 align-middle {className}">
+  <span
+    class="inline-flex min-w-0 items-center align-middle {chip
+      ? REWARD_CHIP_CLASS
+      : 'gap-1.5'} {className}"
+  >
     <span class="min-w-0 wrap-anywhere">{label}</span>
-    {#if quantityLabel}<span class="shrink-0 tabular-nums">{quantityLabel}</span>{/if}
+    {#if quantityLabel}<span class={chip ? REWARD_CHIP_QUANTITY_CLASS : "shrink-0 tabular-nums"}
+        >{quantityLabel}</span
+      >{/if}
   </span>
 {/if}

@@ -29,6 +29,7 @@
   import CurrentEventCard from "$lib/components/event/CurrentEventCard.svelte";
   import RegionBadgeSwitch from "$lib/components/shared/RegionBadgeSwitch.svelte";
   import AssetImage from "$lib/components/shared/AssetImage.svelte";
+  import ViewAllLink from "$lib/components/shared/ViewAllLink.svelte";
   import { swipeRegion } from "$lib/actions/swipe-region";
   import { CardThumbnail } from "@platform/ui-shell";
   import { toTimestampMs } from "$lib/time/date-time";
@@ -78,7 +79,7 @@
   let latestDataViewAll = $state(getInitialI18nText("latestData.viewAll"));
   let latestDataLoadFailed = $state(getInitialI18nText("latestData.loadFailed"));
   let homeNewsTitle = $state(getInitialI18nText("homeNews.title"));
-  let homeNewsViewAll = $state(getInitialI18nText("homeNews.viewAll"));
+  let latestDataViewAllSection = $state(getInitialI18nText("latestData.viewAllSection"));
   let homeNewsLoading = $state(getInitialI18nText("homeNews.loading"));
   let homeNewsEmpty = $state(getInitialI18nText("homeNews.empty"));
   let homeNewsUnavailable = $state(getInitialI18nText("homeNews.unavailable"));
@@ -97,6 +98,9 @@
   let iframeUrl = $state<string | null>(null);
 
   // ── Region state ───────────────────────────────────────────────────
+  // Every section header shares the visible "View all"; the name says which.
+  const viewAllSectionLabel = (section: string): string =>
+    latestDataViewAllSection.replace("{section}", section);
   const getInitialSelectedRegion = (): SupportedRegion => data.initialRegion;
   let selectedRegion = $state<SupportedRegion>(getInitialSelectedRegion());
   const loadedRegionData = $state<Partial<Record<SupportedRegion, HomeRegionData>>>({});
@@ -260,7 +264,7 @@
     latestDataViewAll = translate("latestData.viewAll");
     latestDataLoadFailed = translate("latestData.loadFailed");
     homeNewsTitle = translate("homeNews.title");
-    homeNewsViewAll = translate("homeNews.viewAll");
+    latestDataViewAllSection = translate("latestData.viewAllSection");
     homeNewsLoading = translate("homeNews.loading");
     homeNewsEmpty = translate("homeNews.empty");
     homeNewsUnavailable = translate("homeNews.unavailable");
@@ -457,13 +461,11 @@
         </h2>
       </div>
       <div class="flex shrink-0 items-center justify-end">
-        <a
+        <ViewAllLink
           href="/events/{selectedRegion}"
-          class="btn btn-sm btn-ghost min-h-11 gap-1 whitespace-nowrap text-xs text-base-content/60 transition-colors duration-200 hover:text-primary"
-        >
-          {latestDataViewAll}
-          <Icon icon="mdi:arrow-right" class="size-3" aria-hidden="true" />
-        </a>
+          label={latestDataViewAll}
+          ariaLabel={viewAllSectionLabel(latestDataEventsLabel)}
+        />
       </div>
     </div>
     {#await currentEventPromise}
@@ -596,13 +598,11 @@
                     <Icon icon="mdi:cards-outline" class="size-4" aria-hidden="true" />
                     {latestDataCardsLabel}
                   </span>
-                  <a
+                  <ViewAllLink
                     href="/cards/{regionData.region}"
-                    class="btn btn-xs btn-ghost touch-target gap-1 text-xs text-base-content/50 hover:text-primary"
-                  >
-                    {latestDataViewAll}
-                    <Icon icon="mdi:arrow-right" class="size-3" aria-hidden="true" />
-                  </a>
+                    label={latestDataViewAll}
+                    ariaLabel={viewAllSectionLabel(latestDataCardsLabel)}
+                  />
                 </h3>
                 {#if regionData.cards.length > 0}
                   <div class="grid grid-cols-3 gap-2 sm:gap-3">
@@ -641,13 +641,11 @@
                     <Icon icon="mdi:music-note-eighth" class="size-4" aria-hidden="true" />
                     {latestDataMusicsLabel}
                   </span>
-                  <a
+                  <ViewAllLink
                     href="/musics/{regionData.region}"
-                    class="btn btn-xs btn-ghost touch-target gap-1 text-xs text-base-content/50 hover:text-primary"
-                  >
-                    {latestDataViewAll}
-                    <Icon icon="mdi:arrow-right" class="size-3" aria-hidden="true" />
-                  </a>
+                    label={latestDataViewAll}
+                    ariaLabel={viewAllSectionLabel(latestDataMusicsLabel)}
+                  />
                 </h3>
                 {#if regionData.musics.length > 0}
                   <div class="grid gap-2">
@@ -701,13 +699,11 @@
                   <Icon icon="mdi:gift-outline" class="size-4" aria-hidden="true" />
                   {latestDataGachasLabel}
                 </span>
-                <a
+                <ViewAllLink
                   href="/gachas/{regionData.region}"
-                  class="btn btn-xs btn-ghost touch-target gap-1 text-xs text-base-content/50 hover:text-primary"
-                >
-                  {latestDataViewAll}
-                  <Icon icon="mdi:arrow-right" class="size-3" aria-hidden="true" />
-                </a>
+                  label={latestDataViewAll}
+                  ariaLabel={viewAllSectionLabel(latestDataGachasLabel)}
+                />
               </h3>
               {#if regionData.gachas.length > 0}
                 <ul class="space-y-3">
@@ -773,12 +769,11 @@
           {homeNewsTitle}
         </h2>
       </div>
-      <a
+      <ViewAllLink
         href="/news/{selectedRegion}"
-        class="btn btn-sm btn-ghost min-h-11 gap-1 text-xs text-base-content/60 hover:text-primary"
-      >
-        {homeNewsViewAll}<Icon icon="mdi:arrow-right" class="size-3" aria-hidden="true" />
-      </a>
+        label={latestDataViewAll}
+        ariaLabel={viewAllSectionLabel(homeNewsTitle)}
+      />
     </div>
     {#if newsPromise}
       {#await newsPromise}

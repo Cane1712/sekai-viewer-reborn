@@ -21,19 +21,20 @@ export {
   normalizeHonorDegreeRarity
 } from "./honor-degree";
 export type {
-  BondsHonorDegreeCharacter,
   BondsHonorDegree,
   HonorDegreeAsset,
   HonorDegreeAssetResolver,
+  HonorDegreeBondsBody,
+  HonorDegreeBondsCharacter,
   HonorDegreeInput,
   HonorDegreeLayer,
   HonorDegreeLayout,
-  HonorDegreeMask,
-  HonorDegreeMaskLayer,
   HonorDegreePart,
   HonorDegreeProps,
   HonorDegreeRarity,
   HonorDegreeSize,
+  HonorDegreeSlicedImage,
+  HonorDegreeSliceColumn,
   HonorDegreeSlot,
   NormalHonorDegree,
   RankMatchHonorDegree

@@ -22,7 +22,8 @@
     missions,
     region,
     locale,
-    labels
+    labels,
+    tileSurface = "inset"
   }: {
     missions: Mission[];
     region: SupportedRegion;
@@ -45,6 +46,8 @@
       exp: string;
       resourceLabel: (resourceType: string | null) => string;
     };
+    /** `inset` inside a card; `shell` (white) when the grid sits straight on a sunken area. */
+    tileSurface?: "inset" | "shell";
   } = $props();
 
   // Level ladders run to a few hundred goals at most; this bounds a misbehaving API.
@@ -131,7 +134,9 @@
     <li class="min-w-0">
       <button
         type="button"
-        class="content-card-inset flex size-full min-h-11 min-w-0 cursor-pointer items-start gap-2 rounded-xl border border-(--archive-border-subtle) p-3 text-left text-sm wrap-anywhere text-(--archive-text-strong) outline-none transition-colors duration-180 hover:border-primary/35 hover:bg-(--archive-surface-raised) focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        class="{tileSurface === 'shell'
+          ? 'content-card-shell'
+          : 'content-card-inset'} flex size-full min-h-11 min-w-0 cursor-pointer items-start gap-2 rounded-xl border border-(--archive-border-subtle) p-3 text-left text-sm wrap-anywhere text-(--archive-text-strong) outline-none transition-colors duration-180 hover:border-primary/35 hover:bg-(--archive-surface-raised) focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         aria-haspopup="dialog"
         aria-controls={dialogId}
         onclick={(event) => void openDialog(event, mission)}

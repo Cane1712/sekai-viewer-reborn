@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetApiInfoData, GetApiInfoResponses, GetEventChapterRankingGrpahByEventIdAndCharaIdData, GetEventChapterRankingGrpahByEventIdAndCharaIdResponses, GetEventChapterRankingLiveData, GetEventChapterRankingLiveResponses, GetEventChapterRankingsByEventIdAndCharaIdData, GetEventChapterRankingsByEventIdAndCharaIdResponses, GetEventChapterRankingTimePointsData, GetEventChapterRankingTimePointsResponses, GetEventLatestChapterRankingLiveData, GetEventLatestChapterRankingLiveResponses, GetEventRankingGrpahByEventIdData, GetEventRankingGrpahByEventIdResponses, GetEventRankingLiveData, GetEventRankingLiveResponses, GetEventRankingsByEventIdData, GetEventRankingsByEventIdResponses, GetEventRankingTimePointsData, GetEventRankingTimePointsResponses, GetOpenApiSpecData, GetOpenApiSpecResponses, HealthcheckData, HealthcheckResponses, PostEventChapterRankingData, PostEventChapterRankingErrors, PostEventChapterRankingResponses, PostEventRankingData, PostEventRankingErrors, PostEventRankingResponses } from './types.gen';
+import type { DeleteNotificationData, DeleteNotificationErrors, DeleteNotificationResponses, GetActiveNotificationsData, GetActiveNotificationsResponses, GetApiInfoData, GetApiInfoResponses, GetEventChapterRankingGrpahByEventIdAndCharaIdData, GetEventChapterRankingGrpahByEventIdAndCharaIdResponses, GetEventChapterRankingLiveData, GetEventChapterRankingLiveResponses, GetEventChapterRankingsByEventIdAndCharaIdData, GetEventChapterRankingsByEventIdAndCharaIdResponses, GetEventChapterRankingTimePointsData, GetEventChapterRankingTimePointsResponses, GetEventLatestChapterRankingLiveData, GetEventLatestChapterRankingLiveResponses, GetEventRankingGrpahByEventIdData, GetEventRankingGrpahByEventIdResponses, GetEventRankingLiveData, GetEventRankingLiveResponses, GetEventRankingsByEventIdData, GetEventRankingsByEventIdResponses, GetEventRankingTimePointsData, GetEventRankingTimePointsResponses, GetOpenApiSpecData, GetOpenApiSpecResponses, HealthcheckData, HealthcheckResponses, PostEventChapterRankingData, PostEventChapterRankingErrors, PostEventChapterRankingResponses, PostEventRankingData, PostEventRankingErrors, PostEventRankingResponses, PostNotificationData, PostNotificationErrors, PostNotificationResponses, PutNotificationData, PutNotificationErrors, PutNotificationResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -111,3 +111,43 @@ export const getOpenApiSpec = <ThrowOnError extends boolean = false>(options?: O
  * Provide a detailed information about the service health.
  */
 export const healthcheck = <ThrowOnError extends boolean = false>(options?: Options<HealthcheckData, ThrowOnError>): RequestResult<HealthcheckResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthcheckResponses, unknown, ThrowOnError>({ url: '/status', ...options });
+
+/**
+ * Get active notifications.
+ */
+export const getActiveNotifications = <ThrowOnError extends boolean = false>(options?: Options<GetActiveNotificationsData, ThrowOnError>): RequestResult<GetActiveNotificationsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetActiveNotificationsResponses, unknown, ThrowOnError>({ url: '/notifications', ...options });
+
+/**
+ * Create a notification.
+ */
+export const postNotification = <ThrowOnError extends boolean = false>(options: Options<PostNotificationData, ThrowOnError>): RequestResult<PostNotificationResponses, PostNotificationErrors, ThrowOnError> => (options.client ?? client).post<PostNotificationResponses, PostNotificationErrors, ThrowOnError>({
+    security: [{ name: 'X-API-Key', type: 'apiKey' }],
+    url: '/notifications',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete a notification.
+ */
+export const deleteNotification = <ThrowOnError extends boolean = false>(options: Options<DeleteNotificationData, ThrowOnError>): RequestResult<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError> => (options.client ?? client).delete<DeleteNotificationResponses, DeleteNotificationErrors, ThrowOnError>({
+    security: [{ name: 'X-API-Key', type: 'apiKey' }],
+    url: '/notifications/{id}',
+    ...options
+});
+
+/**
+ * Update a notification.
+ */
+export const putNotification = <ThrowOnError extends boolean = false>(options: Options<PutNotificationData, ThrowOnError>): RequestResult<PutNotificationResponses, PutNotificationErrors, ThrowOnError> => (options.client ?? client).put<PutNotificationResponses, PutNotificationErrors, ThrowOnError>({
+    security: [{ name: 'X-API-Key', type: 'apiKey' }],
+    url: '/notifications/{id}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});

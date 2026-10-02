@@ -4,8 +4,14 @@ import {
   buildHonorDegreeLayout,
   liveMasterLocalAssetResources
 } from "@platform/ui-shell";
-import { createHonorDegreeAssetResolver, toCatalogueHonorDegree } from "./honor-degree";
-import type { Honor, HonorGroupMetadata } from "./domain/honor";
+import {
+  createHonorDegreeAssetResolver,
+  getBondsHonorPartnerUnit,
+  hasBondsHonorOutfitOption,
+  toCatalogueBondsHonorDegree,
+  toCatalogueHonorDegree
+} from "./honor-degree";
+import type { BondsHonor, Honor, HonorGroupMetadata } from "./domain/honor";
 
 vi.mock("$env/dynamic/public", () => ({
   env: { PUBLIC_REMOTE_ASSET_BASE_URL: "https://assets.test" }
@@ -129,8 +135,8 @@ describe("catalogue honor adapter", () => {
       { ...group, honorType: "event", backgroundAssetBundleName: "honor_top_000001" }
     );
     expect(buildHonorDegreeLayout(standard.sub, resolveAsset, "sub1").layers.at(-1)).toMatchObject({
-      x: 60,
-      y: 0,
+      x: 30,
+      y: 42,
       width: 120,
       height: 38
     });
@@ -425,5 +431,155 @@ describe("catalogue honor adapter", () => {
     expect(degree.main).not.toHaveProperty("reverse");
     expect(degree.main).not.toHaveProperty("characters");
     expect(degree.main).not.toHaveProperty("word");
+  });
+});
+
+describe("Bonds honor degrees", () => {
+  const bondsHonor: BondsHonor = {
+    id: 1212603,
+    bondsGroupId: 12126,
+    name: "Miku and KAITO",
+    honorRarity: "high",
+    levels: [
+      { level: 1, description: "Reach bond rank 5" },
+      { level: 2, description: "Reach bond rank 10" }
+    ],
+    words: [
+      {
+        id: 12126001,
+        seq: 1,
+        assetBundleName: "honorname_2126_default_2126",
+        name: "Default",
+        description: null
+      },
+      {
+        id: 12126010,
+        seq: 10,
+        assetBundleName: "honorname_2126_01",
+        name: "Cool Singers",
+        description: "Reach bond rank 26"
+      }
+    ],
+    units: [
+      { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" },
+      { id: 26, gameCharacterId: 26, unit: "piapro", colorCode: "#3366cc" }
+    ],
+    configurableUnitVirtualSinger: false
+  };
+
+  it("uses unit art, unit colours, and the default word with the rarity suffix", () => {
+    const degree = toCatalogueBondsHonorDegree(bondsHonor);
+
+    expect(degree.main).toEqual({
+      kind: "bonds",
+      rarity: 2,
+      level: 1,
+      colors: ["#33ccbb", "#3366cc"],
+      characters: [
+        { bundlePath: "bonds_honor/character", resourceName: "chr_sd_21_01" },
+        { bundlePath: "bonds_honor/character", resourceName: "chr_sd_26_01" }
+      ],
+      word: { bundlePath: "bonds_honor/word", resourceName: "honorname_2126_default_2126_03" },
+      reverse: false
+    });
+    expect(degree.sub).toBe(degree.main);
+  });
+
+  it("shows the chosen word and swaps sides", () => {
+    const degree = toCatalogueBondsHonorDegree(bondsHonor, {
+      wordId: 12126010,
+      reverse: true,
+      unitVirtualSinger: false
+    }).main;
+
+    expect(degree).toMatchObject({
+      word: { resourceName: "honorname_2126_01_03" },
+      reverse: true
+    });
+  });
+
+  it("falls back to the default word for an unknown word", () => {
+    const degree = toCatalogueBondsHonorDegree(bondsHonor, {
+      wordId: 999,
+      reverse: false,
+      unitVirtualSinger: false
+    }).main;
+
+    expect(degree).toMatchObject({ word: { resourceName: "honorname_2126_default_2126_03" } });
+  });
+
+  describe("Virtual Singer outfit", () => {
+    // Shiho (Leo/need) and Miku: Miku can wear the Leo/need outfit (character unit 27).
+    const shihoAndMiku: BondsHonor = {
+      ...bondsHonor,
+      id: 1042101,
+      bondsGroupId: 10421,
+      name: "Shiho and Miku",
+      honorRarity: "low",
+      units: [
+        { id: 4, gameCharacterId: 4, unit: "light_sound", colorCode: "#bbdd22" },
+        { id: 21, gameCharacterId: 21, unit: "piapro", colorCode: "#33ccbb" }
+      ],
+      configurableUnitVirtualSinger: true
+    };
+    const viewData = {
+      characterUnitIds: { "21:light_sound": 27, "21:idol": 28, "26:light_sound": 52 },
+      unitNames: {}
+    };
+    const unitView = { wordId: null, reverse: false, unitVirtualSinger: true };
+    const characterArt = (
+      honor: BondsHonor,
+      view = unitView,
+      data: typeof viewData | null = viewData
+    ) => {
+      const degree = toCatalogueBondsHonorDegree(honor, view, data).main;
+      return degree.kind === "bonds"
+        ? degree.characters.map((character) => character?.resourceName)
+        : [];
+    };
+
+    it("dresses the Virtual Singer in the partner's unit outfit", () => {
+      expect(getBondsHonorPartnerUnit(shihoAndMiku)).toBe("light_sound");
+      expect(hasBondsHonorOutfitOption(shihoAndMiku)).toBe(true);
+      expect(characterArt(shihoAndMiku)).toEqual(["chr_sd_04_01", "chr_sd_27_01"]);
+    });
+
+    it("keeps the unit colours, which the game takes from the pair's own units", () => {
+      const degree = toCatalogueBondsHonorDegree(shihoAndMiku, unitView, viewData).main;
+      expect(degree).toMatchObject({ colors: ["#bbdd22", "#33ccbb"] });
+    });
+
+    it("keeps the Virtual Singer's own outfit otherwise", () => {
+      expect(characterArt(shihoAndMiku, { ...unitView, unitVirtualSinger: false })).toEqual([
+        "chr_sd_04_01",
+        "chr_sd_21_01"
+      ]);
+      // Without unit data the option cannot resolve an outfit.
+      expect(characterArt(shihoAndMiku, unitView, null)).toEqual(["chr_sd_04_01", "chr_sd_21_01"]);
+      // Two Virtual Singers have no partner unit.
+      expect(getBondsHonorPartnerUnit(bondsHonor)).toBeNull();
+      expect(hasBondsHonorOutfitOption(bondsHonor)).toBe(false);
+      expect(characterArt({ ...bondsHonor, configurableUnitVirtualSinger: true })).toEqual([
+        "chr_sd_21_01",
+        "chr_sd_26_01"
+      ]);
+      // A pair the game does not let the player dress keeps the Virtual Singer's outfit.
+      expect(characterArt({ ...shihoAndMiku, configurableUnitVirtualSinger: false })).toEqual([
+        "chr_sd_04_01",
+        "chr_sd_21_01"
+      ]);
+    });
+  });
+
+  it("resolves re-exported Bonds art past cached trimmed copies", () => {
+    const resolve = createHonorDegreeAssetResolver("jp");
+
+    expect(resolve("bonds_honor/character", "chr_sd_21_01")).toMatch(
+      /^https:\/\/assets\.test\/.+\/bonds_honor\/character\/chr_sd_21_01\.webp\?v=2$/
+    );
+    expect(resolve("bonds_honor/word", "honorname_2126_01_03")).toMatch(
+      /\/bonds_honor\/word\/honorname_2126_01_03\.webp\?v=2$/
+    );
+    expect(resolve("bonds_honor/other", "x")).toBeNull();
   });
 });

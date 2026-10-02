@@ -77,7 +77,14 @@
   let filterName = $state("");
   let appliedName = $state("");
   let ongoingLabel = $state(getInitialText("virtualLiveStatus.ongoing"));
-  const typeValues = ["normal", "beginner", "cheerful_carnival", "streaming", "virtual_message"];
+  const typeValues = [
+    "normal",
+    "beginner",
+    "cheerful_carnival",
+    "streaming",
+    "virtual_message",
+    "solo_virtual_live"
+  ];
 
   const typeLabel = (value: string | null): string =>
     value ? translateType(`virtualLiveType.${value}`, value.replaceAll("_", " ")) : "";

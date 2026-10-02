@@ -23,13 +23,6 @@ export interface HonorDegreePart extends HonorDegreeAsset {
   readonly height: number;
 }
 
-/** Caller-supplied mask asset with explicit geometry in root pixels. */
-export type HonorDegreeMask = HonorDegreePart;
-
-export interface BondsHonorDegreeCharacter extends HonorDegreePart {
-  readonly mask?: HonorDegreeMask | null;
-}
-
 export interface NormalHonorDegree {
   readonly kind: "normal";
   readonly honorType?: "regular" | "event" | "birthday" | "live-master";
@@ -43,6 +36,16 @@ export interface NormalHonorDegree {
   readonly rankAsset?: HonorDegreeAsset | null;
   /** Drawn last, in supplied order. Caller supplies the selected slot's geometry. */
   readonly liveMasterParts?: readonly HonorDegreePart[];
+  /**
+   * Live MASTER parts the builder lays out as the game does (jp-6.7.0
+   * UIPartsLiveMasterHonorLevel): the scroll, ten level stars in the main slot, and the
+   * clear count on the scroll's ribbon. Used only for honorType live-master.
+   */
+  readonly liveMaster?: {
+    readonly scroll?: HonorDegreeAsset | null;
+    /** The honor mission's progress; omitted when unknown, which hides the number. */
+    readonly clearCount?: number | null;
+  } | null;
 }
 
 export interface RankMatchHonorDegree {
@@ -54,25 +57,25 @@ export interface RankMatchHonorDegree {
   readonly frameBundlePath?: string | null;
 }
 
+/**
+ * A Bonds honor, laid out as the game's UIPartsBondsHonorImage (jp-6.7.0).
+ * The builder owns all geometry; callers supply only data and assets.
+ */
 export interface BondsHonorDegree {
   readonly kind: "bonds";
   readonly rarity?: HonorDegreeRarity | null;
-  /** Bonds use the selected main/sub root; reverse mirrors that root. */
-  readonly reverse?: boolean;
-  /**
-   * Ordered full-root backgrounds, e.g. the base and color layers. When
-   * supplied, this takes precedence over the legacy single `background`.
-   */
-  readonly backgrounds?: readonly (HonorDegreeAsset | null | undefined)[] | null;
-  /** Legacy single background, used when `backgrounds` is omitted. */
-  readonly background?: HonorDegreeAsset | null;
-  readonly pattern?: HonorDegreeAsset | null;
-  readonly characters?: readonly [
-    BondsHonorDegreeCharacter | null,
-    BondsHonorDegreeCharacter | null
+  readonly level?: number | null;
+  /** Character unit colours (`colorCode`) that tint each half: first unit, then second. */
+  readonly colors: readonly [string | null | undefined, string | null | undefined];
+  /** Full 160×136 `bonds_honor/character/chr_sd_*` canvases: first unit, then second. */
+  readonly characters: readonly [
+    HonorDegreeAsset | null | undefined,
+    HonorDegreeAsset | null | undefined
   ];
-  readonly word?: HonorDegreePart | null;
-  /** Paint order: backgrounds, pattern, characters, local rarity frame, word. */
+  /** Full 380×80 `bonds_honor/word/*` canvas. The game shows it in the main slot only. */
+  readonly word?: HonorDegreeAsset | null;
+  /** The reverse view swaps which unit sits on which side; it does not mirror. */
+  readonly reverse?: boolean;
 }
 
 export type HonorDegreeInput =
@@ -83,7 +86,7 @@ export interface HonorDegreeProps {
   readonly resolveAsset: HonorDegreeAssetResolver;
   readonly slot?: HonorDegreeSlot;
   readonly size?: HonorDegreeSize;
-  /** Localized accessible name and empty placeholder text; defaults to Honor. */
+  /** Localized accessible name and empty placeholder text; defaults to Title. */
   readonly label?: string;
   /** Optional SVG tooltip; defaults to label. Omitted in decorative mode. */
   readonly title?: string;
@@ -98,7 +101,6 @@ export interface HonorDegreeLayer {
   readonly y: number;
   readonly width: number;
   readonly height: number;
-  readonly mask?: HonorDegreeMaskLayer;
   /**
    * `contain` keeps the texture's aspect ratio centred in the rect instead of
    * stretching it. Frames use it: some frame textures ship with their
@@ -107,18 +109,52 @@ export interface HonorDegreeLayer {
   readonly fit?: "fill" | "contain";
 }
 
-export interface HonorDegreeMaskLayer {
+/** Source columns of a 9-slice image drawn into one destination column. */
+export interface HonorDegreeSliceColumn {
+  readonly x: number;
+  readonly width: number;
+  readonly sourceX: number;
+  readonly sourceWidth: number;
+}
+
+/** A horizontally 9-sliced image (Unity Image.Type.Sliced with left/right borders). */
+export interface HonorDegreeSlicedImage {
+  readonly href: string;
+  readonly sourceWidth: number;
+  readonly sourceHeight: number;
+  readonly y: number;
+  readonly height: number;
+  readonly columns: readonly HonorDegreeSliceColumn[];
+  /** Rotation in degrees about the centre of the columns' extent. */
+  readonly rotate?: 180;
+}
+
+export interface HonorDegreeBondsCharacter {
   readonly href: string;
   readonly x: number;
   readonly y: number;
   readonly width: number;
   readonly height: number;
+  /** The sub slot's per-side window mask. */
+  readonly window: HonorDegreeSlicedImage | null;
+}
+
+/** Tinted halves, pattern and masked characters, drawn beneath the frame layers. */
+export interface HonorDegreeBondsBody {
+  /** Paint order: the full-width base, then the left colour. */
+  readonly backgrounds: readonly {
+    readonly image: HonorDegreeSlicedImage;
+    readonly color: string;
+  }[];
+  readonly pattern: string | null;
+  readonly characterMask: HonorDegreeSlicedImage | null;
+  readonly characters: readonly HonorDegreeBondsCharacter[];
 }
 
 export interface HonorDegreeLayout {
   readonly width: 180 | 380;
   readonly height: 80;
   readonly scale: number;
-  readonly reverse: boolean;
+  readonly bonds: HonorDegreeBondsBody | null;
   readonly layers: readonly HonorDegreeLayer[];
 }

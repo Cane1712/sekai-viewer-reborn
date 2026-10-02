@@ -565,3 +565,109 @@ export const getMusicChartPreviewAssetURL = (
     "musicChart"
   );
 };
+
+/**
+ * MySekai thumbnails, icons, and sound-track audio exist only on the JP asset server.
+ * Asset bundle names are the same in every region, so every region reads them from JP.
+ */
+const MYSEKAI_ASSET_SERVER: AssetServer = "jp";
+
+// Trims leading and trailing slashes with a scan, not a backtracking regex.
+const normalizeBundleName = (value: string | null | undefined): string => {
+  const trimmed = value?.trim() ?? "";
+  let start = 0;
+  let end = trimmed.length;
+  while (start < end && trimmed[start] === "/") start += 1;
+  while (end > start && trimmed[end - 1] === "/") end -= 1;
+  return trimmed.slice(start, end);
+};
+
+export type MysekaiFixtureAsset = {
+  assetbundleName?: string | null;
+  mysekaiFixtureType?: string | null;
+  mysekaiSettableLayoutType?: string | null;
+};
+
+/** A fixture's catalogue thumbnail; wallpapers and flooring show their texture swatch. */
+export const getMysekaiFixtureThumbnailURL = (
+  fixture: MysekaiFixtureAsset,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(fixture.assetbundleName);
+  if (!bundle) return null;
+
+  const layout = normalizeBundleName(fixture.mysekaiSettableLayoutType);
+  const endpoint =
+    fixture.mysekaiFixtureType === "surface_appearance" && layout
+      ? `mysekai/thumbnail/surface_appearance/${bundle}/tex_${bundle}_${layout}_1.webp`
+      : `mysekai/thumbnail/fixture/${bundle}_1.webp`;
+  return buildServerAssetURL(endpoint, MYSEKAI_ASSET_SERVER, baseUrlOverride);
+};
+
+export const getMysekaiMaterialIconURL = (
+  iconAssetbundleName: string | null | undefined,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(iconAssetbundleName);
+  return bundle
+    ? buildServerAssetURL(
+        `mysekai/thumbnail/material/${bundle}.webp`,
+        MYSEKAI_ASSET_SERVER,
+        baseUrlOverride
+      )
+    : null;
+};
+
+export const getMysekaiToolIconURL = (
+  assetbundleName: string | null | undefined,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(assetbundleName);
+  return bundle
+    ? buildServerAssetURL(
+        `mysekai/thumbnail/tool/${bundle}.webp`,
+        MYSEKAI_ASSET_SERVER,
+        baseUrlOverride
+      )
+    : null;
+};
+
+/** A stamp's image; the bundle name is the stamp's own, not built from its ID. */
+export const getStampImageURL = (
+  assetbundleName: string | null | undefined,
+  server: AssetServer = "jp",
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(assetbundleName);
+  return bundle
+    ? buildServerAssetURL(`stamp/${bundle}/${bundle}.webp`, server, baseUrlOverride)
+    : null;
+};
+
+/** The jacket of a sound-track category, named by the category's asset bundle. */
+export const getMysekaiSoundTrackJacketURL = (
+  categoryAssetbundleName: string | null | undefined,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(categoryAssetbundleName);
+  return bundle
+    ? buildServerAssetURL(
+        `mysekai/music_record_soundtrack/jacket/${bundle}.webp`,
+        MYSEKAI_ASSET_SERVER,
+        baseUrlOverride
+      )
+    : null;
+};
+
+/** A sound track's audio: `{assetbundleName}/{assetbundleFileName}.mp3`. */
+export const getMysekaiSoundTrackAudioURL = (
+  assetbundleName: string | null | undefined,
+  assetbundleFileName: string | null | undefined,
+  baseUrlOverride?: string | null
+): string | null => {
+  const bundle = normalizeBundleName(assetbundleName);
+  const fileName = normalizeBundleName(assetbundleFileName) || bundle.split("/").at(-1) || "";
+  return bundle && fileName
+    ? buildServerAssetURL(`${bundle}/${fileName}.mp3`, MYSEKAI_ASSET_SERVER, baseUrlOverride)
+    : null;
+};

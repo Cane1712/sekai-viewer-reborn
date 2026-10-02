@@ -29,6 +29,11 @@ export type MasterdataSyncStatus = {
 };
 
 export type SharedBondsHonorCharacterUnitResponse = {
+    /**
+     * ColorCode is the unit's color, such as "#33aaee"; it tints that
+     * character's half of the degree background.
+     */
+    colorCode?: string;
     gameCharacterId?: number;
     id?: number;
     unit?: string;
@@ -545,8 +550,9 @@ export type SharedEventRewardRangeResponse = {
 export type SharedEventRewardResourceBoxDetail = {
     honor?: SharedEventRewardHonorResponse;
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceBoxId?: number;
@@ -555,10 +561,17 @@ export type SharedEventRewardResourceBoxDetail = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };
@@ -904,8 +917,9 @@ export type SharedMissionParameterGroupResponse = {
 
 export type SharedMissionResourceBoxDetailResponse = {
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceBoxId?: number;
@@ -914,10 +928,17 @@ export type SharedMissionResourceBoxDetailResponse = {
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };
@@ -1041,6 +1062,12 @@ export type SharedMusicObjectResponse = {
     title?: unknown;
 };
 
+export type SharedMusicSoundTrackCategoryResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+};
+
 export type SharedMusicVocalCharacterResponse = {
     characterId?: unknown;
     sortOrder?: unknown;
@@ -1062,6 +1089,196 @@ export type SharedMusicVocalsResponse = {
     items?: Array<SharedMusicVocalResponse>;
 };
 
+export type SharedMysekaiBlueprintResponse = {
+    craftCountLimit?: number;
+    id: number;
+    isAvailableWithoutPossession?: boolean;
+    isEnableSketch?: boolean;
+    isObtainedByConvert?: boolean;
+    materialCosts: Array<SharedMysekaiMaterialQuantityResponse>;
+};
+
+export type SharedMysekaiFixtureCharacterBonusResponse = {
+    bonusRate?: number;
+    gameCharacterIds: Array<number>;
+};
+
+export type SharedMysekaiFixtureColorResponse = {
+    colorCode?: string;
+    textureId?: number;
+};
+
+export type SharedMysekaiFixtureDetailResponse = {
+    anotherColors: Array<SharedMysekaiFixtureColorResponse>;
+    assetbundleName?: string;
+    blueprint?: SharedMysekaiBlueprintResponse;
+    characterBonus?: SharedMysekaiFixtureCharacterBonusResponse;
+    colorCode?: string;
+    disassembleMaterials: Array<SharedMysekaiMaterialQuantityResponse>;
+    firstPutCost?: number;
+    flavorText?: string;
+    gridSize?: SharedMysekaiFixtureGridSizeResponse;
+    id: number;
+    isAssembled?: boolean;
+    isDisassembled?: boolean;
+    mainGenre?: SharedMysekaiFixtureGenreResponse;
+    mysekaiFixtureMainGenreId?: number;
+    mysekaiFixtureSubGenreId?: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    mysekaiSettableSiteType?: string;
+    name: string;
+    pronunciation?: string;
+    secondPutCost?: number;
+    seq?: number;
+    subGenre?: SharedMysekaiFixtureGenreResponse;
+    tagIds: Array<number>;
+    tags: Array<SharedMysekaiFixtureTagResponse>;
+};
+
+export type SharedMysekaiFixtureFiltersResponse = {
+    mainGenres: Array<SharedMysekaiFixtureMainGenreResponse>;
+    tags: Array<SharedMysekaiFixtureTagResponse>;
+};
+
+export type SharedMysekaiFixtureGenreResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+};
+
+export type SharedMysekaiFixtureGridSizeResponse = {
+    depth: number;
+    height: number;
+    width: number;
+};
+
+export type SharedMysekaiFixtureListItemResponse = {
+    assetbundleName?: string;
+    gridSize?: SharedMysekaiFixtureGridSizeResponse;
+    id: number;
+    mysekaiFixtureMainGenreId?: number;
+    mysekaiFixtureSubGenreId?: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    tagIds: Array<number>;
+};
+
+export type SharedMysekaiFixtureListResponse = {
+    items: Array<SharedMysekaiFixtureListItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiFixtureMainGenreResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+    /**
+     * SubGenres are the sub-genres fixtures of this main genre use, by ID.
+     */
+    subGenres?: Array<SharedMysekaiFixtureGenreResponse>;
+};
+
+export type SharedMysekaiFixtureSummaryResponse = {
+    assetbundleName?: string;
+    id: number;
+    mysekaiFixtureType?: string;
+    mysekaiSettableLayoutType?: string;
+    name: string;
+};
+
+export type SharedMysekaiFixtureTagResponse = {
+    externalId?: number;
+    id: number;
+    mysekaiFixtureTagType: string;
+    name: string;
+    pronunciation?: string;
+};
+
+export type SharedMysekaiMaterialDetailResponse = {
+    description?: string;
+    gameCharacterIds: Array<number>;
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    sites: Array<SharedMysekaiSiteResponse>;
+    usedBy: Array<SharedMysekaiMaterialUseResponse>;
+};
+
+export type SharedMysekaiMaterialListResponse = {
+    items: Array<SharedMysekaiMaterialResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiMaterialQuantityResponse = {
+    material: SharedMysekaiMaterialSummaryResponse;
+    quantity: number;
+};
+
+export type SharedMysekaiMaterialResponse = {
+    description?: string;
+    gameCharacterIds: Array<number>;
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+    pronunciation?: string;
+    seq?: number;
+    sites: Array<SharedMysekaiSiteResponse>;
+};
+
+export type SharedMysekaiMaterialSummaryResponse = {
+    iconAssetbundleName?: string;
+    id: number;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    name: string;
+};
+
+export type SharedMysekaiMaterialUseResponse = {
+    fixture: SharedMysekaiFixtureSummaryResponse;
+    quantity: number;
+};
+
+export type SharedMysekaiMusicRecordFiltersResponse = {
+    soundTrackCategories: Array<SharedMusicSoundTrackCategoryResponse>;
+};
+
+export type SharedMysekaiMusicRecordListResponse = {
+    items: Array<SharedMysekaiMusicRecordResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiMusicRecordMusicResponse = {
+    assetbundleName?: string;
+    id: number;
+    title: string;
+};
+
+export type SharedMysekaiMusicRecordResponse = {
+    externalId: number;
+    id: number;
+    music?: SharedMysekaiMusicRecordMusicResponse;
+    mysekaiMusicTrackType: string;
+    soundTrack?: SharedMysekaiMusicRecordSoundTrackResponse;
+};
+
+export type SharedMysekaiMusicRecordSoundTrackResponse = {
+    assetbundleFileName?: string;
+    assetbundleName?: string;
+    id: number;
+    musicSoundTrackCategoryId?: number;
+    title: string;
+};
+
 export type SharedMysekaiPhotoDecorationListResponse = {
     items?: Array<SharedMysekaiPhotoDecorationResponse>;
     pagination?: SharedPaginationResponse;
@@ -1073,6 +1290,44 @@ export type SharedMysekaiPhotoDecorationResponse = {
     id?: number;
     name?: string;
     seq?: number;
+};
+
+export type SharedMysekaiShopCostResponse = {
+    quantity: number;
+    resourceId?: number;
+    resourceType: string;
+};
+
+export type SharedMysekaiShopItemResponse = {
+    costs: Array<SharedMysekaiShopCostResponse>;
+    id: number;
+    mysekaiShopExchangeLimitType?: string;
+    mysekaiShopExchangeLimitValue?: number;
+    mysekaiShopType: string;
+    resources: Array<SharedMysekaiShopResourceResponse>;
+    seq?: number;
+};
+
+export type SharedMysekaiShopListResponse = {
+    items: Array<SharedMysekaiShopItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
+export type SharedMysekaiShopResourceResponse = {
+    assetbundleName?: string;
+    description?: string;
+    mysekaiMaterialRarityType?: string;
+    mysekaiMaterialType?: string;
+    mysekaiToolType?: string;
+    name?: string;
+    resourceId?: number;
+    resourceQuantity: number;
+    resourceType: string;
+};
+
+export type SharedMysekaiSiteResponse = {
+    id: number;
+    name: string;
 };
 
 export type SharedPaginationResponse = {
@@ -1155,6 +1410,23 @@ export type SharedSkillResponse = {
     skillFilterId?: number;
 };
 
+export type SharedStampListItemResponse = {
+    assetbundleName?: string;
+    category: string;
+    characterIds: Array<number>;
+    description?: string;
+    gameCharacterUnitId?: number;
+    id: number;
+    name: string;
+    seq?: number;
+    stampType: string;
+};
+
+export type SharedStampListResponse = {
+    items: Array<SharedStampListItemResponse>;
+    pagination: SharedPaginationResponse;
+};
+
 export type SharedUnitProfileListResponse = {
     items?: Array<SharedUnitProfileObjectResponse>;
     pagination?: SharedPaginationResponse;
@@ -1213,6 +1485,13 @@ export type SharedVirtualLiveCharacter = {
     virtualLivePerformanceType?: string;
 };
 
+export type SharedVirtualLiveGroupSummaryResponse = {
+    assetbundleName?: string;
+    id: number;
+    name: string;
+    virtualLiveGroupType?: string;
+};
+
 export type SharedVirtualLiveInformation = {
     description?: string;
     summary?: string;
@@ -1247,6 +1526,12 @@ export type SharedVirtualLiveListItemResponse = {
     id: number;
     name: string;
     startAt: number;
+    /**
+     * VirtualLiveGroup is the group a grouped live (a virtual message or solo
+     * live) belongs to. Such lives have no banner of their own; the group's
+     * assetbundleName names it.
+     */
+    virtualLiveGroup?: SharedVirtualLiveGroupSummaryResponse;
     virtualLiveType: string;
 };
 
@@ -1288,7 +1573,23 @@ export type SharedVirtualLiveObjectResponse = {
     virtualLivePlatform: string;
     virtualLiveReward?: SharedVirtualLiveReward;
     virtualLiveRewards?: Array<SharedVirtualLiveReward>;
+    /**
+     * VirtualLiveTotalCheerPointRewards are a solo virtual live's rewards for
+     * the Virtual Cheer Coins spent in total, by threshold. Other lives have
+     * none.
+     */
+    virtualLiveTotalCheerPointRewards?: Array<SharedVirtualLiveTotalCheerPointReward>;
+    /**
+     * VirtualLiveTotalCheerPointSurplusReward is a solo virtual live's reward
+     * for every BasePoint coins spent that no threshold reward counts.
+     */
+    virtualLiveTotalCheerPointSurplusReward?: SharedVirtualLiveTotalCheerPointSurplusReward | null;
     virtualLiveType: string;
+    /**
+     * VirtualLiveVirtualItemOverrideCost is the item a solo virtual live's
+     * cheer items cost in place of virtual coins and crystals.
+     */
+    virtualLiveVirtualItemOverrideCost?: SharedVirtualLiveVirtualItemOverrideCost | null;
     virtualLiveWaitingRoom?: SharedVirtualLiveWaitingRoom;
 };
 
@@ -1310,18 +1611,26 @@ export type SharedVirtualLiveRewardResourceBox = {
 export type SharedVirtualLiveRewardResourceBoxDetail = {
     honor?: SharedEventRewardHonorResponse;
     /**
-     * ResourceAssetbundleName is the rewarded item's asset bundle name; only
-     * gacha tickets carry one, and their icon path depends on it.
+     * ResourceAssetbundleName is the asset bundle name the rewarded item's
+     * icon path depends on; only gacha tickets, MySekai materials and tools,
+     * stamps, and virtual live archive items carry one.
      */
     resourceAssetbundleName?: string;
     resourceId?: number;
     resourceLevel?: number;
     /**
      * ResourceName is the rewarded item's localized name for gacha tickets,
-     * materials, skill practice tickets, and boost items.
+     * materials, skill practice tickets, boost items, titles (honors and
+     * Kizuna titles), MySekai materials and tools, stamps, and virtual live
+     * archive items.
      */
     resourceName?: string;
     resourceQuantity?: number;
+    /**
+     * ResourceRarity is a rewarded title's rarity (low, middle, high, highest);
+     * it picks the title reward icon.
+     */
+    resourceRarity?: string;
     resourceType?: string;
     seq?: number;
 };
@@ -1359,6 +1668,40 @@ export type SharedVirtualLiveSetlist = {
 
 export type SharedVirtualLiveSetlistsResponse = {
     items: Array<SharedVirtualLiveSetlist>;
+};
+
+export type SharedVirtualLiveTotalCheerPointReward = {
+    id: number;
+    resourceBox?: SharedVirtualLiveRewardResourceBox;
+    resourceBoxId: number;
+    threshold: number;
+    virtualLiveId: number;
+};
+
+export type SharedVirtualLiveTotalCheerPointSurplusReward = {
+    basePoint: number;
+    id: number;
+    resourceBox?: SharedVirtualLiveRewardResourceBox;
+    resourceBoxId: number;
+    virtualLiveId: number;
+};
+
+export type SharedVirtualLiveVirtualItemOverrideCost = {
+    assetbundleName?: string;
+    /**
+     * CostResourceAssetbundleName is the asset bundle name the cost item's
+     * icon path depends on, when it has one.
+     */
+    costResourceAssetbundleName?: string;
+    costResourceId: number;
+    /**
+     * CostResourceName is the cost item's localized name, for the item types
+     * reward details name.
+     */
+    costResourceName?: string;
+    costResourceType: string;
+    id: number;
+    virtualLiveId: number;
 };
 
 export type SharedVirtualLiveWaitingRoom = {
@@ -1770,6 +2113,10 @@ export type GetBondsHonorsByRegionListData = {
          * Exactly two distinct underlying game character IDs, comma-separated (for example: 1,2)
          */
         game_character_ids?: string;
+        /**
+         * Case-insensitive substring of the honor name or of one of its words
+         */
+        name?: string;
     };
     url: '/bondsHonors/{region}/list';
 };
@@ -4675,6 +5022,359 @@ export type GetMusicsByRegionByIdVocalsResponses = {
 
 export type GetMusicsByRegionByIdVocalsResponse = GetMusicsByRegionByIdVocalsResponses[keyof GetMusicsByRegionByIdVocalsResponses];
 
+export type GetMysekaiFixturesByRegionFiltersData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: never;
+    url: '/mysekaiFixtures/{region}/filters';
+};
+
+export type GetMysekaiFixturesByRegionFiltersErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionFiltersError = GetMysekaiFixturesByRegionFiltersErrors[keyof GetMysekaiFixturesByRegionFiltersErrors];
+
+export type GetMysekaiFixturesByRegionFiltersResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureFiltersResponse;
+};
+
+export type GetMysekaiFixturesByRegionFiltersResponse = GetMysekaiFixturesByRegionFiltersResponses[keyof GetMysekaiFixturesByRegionFiltersResponses];
+
+export type GetMysekaiFixturesByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Case-insensitive substring of the name or its reading
+         */
+        name?: string;
+        /**
+         * Comma-separated main genre IDs
+         */
+        main_genre_id?: string;
+        /**
+         * Comma-separated sub-genre IDs
+         */
+        sub_genre_id?: string;
+        /**
+         * Comma-separated tag IDs, all required
+         */
+        tag_id?: string;
+        /**
+         * Sort field (id|seq|name)
+         */
+        sort_by?: string;
+        /**
+         * Sort order (asc|desc)
+         */
+        sort_order?: string;
+    };
+    url: '/mysekaiFixtures/{region}/list';
+};
+
+export type GetMysekaiFixturesByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionListError = GetMysekaiFixturesByRegionListErrors[keyof GetMysekaiFixturesByRegionListErrors];
+
+export type GetMysekaiFixturesByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureListResponse;
+};
+
+export type GetMysekaiFixturesByRegionListResponse = GetMysekaiFixturesByRegionListResponses[keyof GetMysekaiFixturesByRegionListResponses];
+
+export type GetMysekaiFixturesByRegionByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+        /**
+         * Fixture ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/mysekaiFixtures/{region}/{id}';
+};
+
+export type GetMysekaiFixturesByRegionByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Not Found
+     */
+    404: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiFixturesByRegionByIdError = GetMysekaiFixturesByRegionByIdErrors[keyof GetMysekaiFixturesByRegionByIdErrors];
+
+export type GetMysekaiFixturesByRegionByIdResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiFixtureDetailResponse;
+};
+
+export type GetMysekaiFixturesByRegionByIdResponse = GetMysekaiFixturesByRegionByIdResponses[keyof GetMysekaiFixturesByRegionByIdResponses];
+
+export type GetMysekaiMaterialsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Comma-separated material types, such as wood or mineral
+         */
+        material_type?: string;
+    };
+    url: '/mysekaiMaterials/{region}/list';
+};
+
+export type GetMysekaiMaterialsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMaterialsByRegionListError = GetMysekaiMaterialsByRegionListErrors[keyof GetMysekaiMaterialsByRegionListErrors];
+
+export type GetMysekaiMaterialsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMaterialListResponse;
+};
+
+export type GetMysekaiMaterialsByRegionListResponse = GetMysekaiMaterialsByRegionListResponses[keyof GetMysekaiMaterialsByRegionListResponses];
+
+export type GetMysekaiMaterialsByRegionByIdData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+        /**
+         * Material ID
+         */
+        id: number;
+    };
+    query?: never;
+    url: '/mysekaiMaterials/{region}/{id}';
+};
+
+export type GetMysekaiMaterialsByRegionByIdErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Not Found
+     */
+    404: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMaterialsByRegionByIdError = GetMysekaiMaterialsByRegionByIdErrors[keyof GetMysekaiMaterialsByRegionByIdErrors];
+
+export type GetMysekaiMaterialsByRegionByIdResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMaterialDetailResponse;
+};
+
+export type GetMysekaiMaterialsByRegionByIdResponse = GetMysekaiMaterialsByRegionByIdResponses[keyof GetMysekaiMaterialsByRegionByIdResponses];
+
+export type GetMysekaiMusicRecordsByRegionFiltersData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: never;
+    url: '/mysekaiMusicRecords/{region}/filters';
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersError = GetMysekaiMusicRecordsByRegionFiltersErrors[keyof GetMysekaiMusicRecordsByRegionFiltersErrors];
+
+export type GetMysekaiMusicRecordsByRegionFiltersResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMusicRecordFiltersResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionFiltersResponse = GetMysekaiMusicRecordsByRegionFiltersResponses[keyof GetMysekaiMusicRecordsByRegionFiltersResponses];
+
+export type GetMysekaiMusicRecordsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Track type (music|music_sound_track)
+         */
+        track_type?: string;
+        /**
+         * Comma-separated sound-track category IDs; keeps sound-track records only
+         */
+        sound_track_category_id?: string;
+        /**
+         * Case-insensitive substring of the song or sound-track title
+         */
+        name?: string;
+        /**
+         * Include records of unpublished songs
+         */
+        spoiler?: boolean;
+    };
+    url: '/mysekaiMusicRecords/{region}/list';
+};
+
+export type GetMysekaiMusicRecordsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionListError = GetMysekaiMusicRecordsByRegionListErrors[keyof GetMysekaiMusicRecordsByRegionListErrors];
+
+export type GetMysekaiMusicRecordsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiMusicRecordListResponse;
+};
+
+export type GetMysekaiMusicRecordsByRegionListResponse = GetMysekaiMusicRecordsByRegionListResponses[keyof GetMysekaiMusicRecordsByRegionListResponses];
+
 export type GetMysekaiPhotoDecorationsByRegionListData = {
     body?: never;
     path: {
@@ -4768,6 +5468,57 @@ export type GetMysekaiPhotoDecorationsByRegionByIdResponses = {
 
 export type GetMysekaiPhotoDecorationsByRegionByIdResponse = GetMysekaiPhotoDecorationsByRegionByIdResponses[keyof GetMysekaiPhotoDecorationsByRegionByIdResponses];
 
+export type GetMysekaiShopsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Comma-separated shop types, such as material or tool
+         */
+        shop_type?: string;
+    };
+    url: '/mysekaiShops/{region}/list';
+};
+
+export type GetMysekaiShopsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetMysekaiShopsByRegionListError = GetMysekaiShopsByRegionListErrors[keyof GetMysekaiShopsByRegionListErrors];
+
+export type GetMysekaiShopsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedMysekaiShopListResponse;
+};
+
+export type GetMysekaiShopsByRegionListResponse = GetMysekaiShopsByRegionListResponses[keyof GetMysekaiShopsByRegionListResponses];
+
 export type GetSpecialStoriesByRegionListData = {
     body?: never;
     path: {
@@ -4826,6 +5577,81 @@ export type GetSpecialStoriesByRegionListResponses = {
 };
 
 export type GetSpecialStoriesByRegionListResponse = GetSpecialStoriesByRegionListResponses[keyof GetSpecialStoriesByRegionListResponses];
+
+export type GetStampsByRegionListData = {
+    body?: never;
+    path: {
+        /**
+         * Region
+         */
+        region: string;
+    };
+    query?: {
+        /**
+         * Page number
+         */
+        page?: number;
+        /**
+         * Page size
+         */
+        page_size?: number;
+        /**
+         * Case-insensitive substring of the stamp name
+         */
+        name?: string;
+        /**
+         * Comma-separated categories (character|bond|text|other)
+         */
+        category?: string;
+        /**
+         * Comma-separated sources by the resource box that rewards the stamp (shop|exchange|live|rank|bond|crystal|other)
+         */
+        source?: string;
+        /**
+         * Comma-separated game character IDs; the stamp must show all of them
+         */
+        character_id?: string;
+        /**
+         * Include stamps that are not published yet
+         */
+        spoiler?: boolean;
+        /**
+         * Sort field (id|seq)
+         */
+        sort_by?: string;
+        /**
+         * Sort order (asc|desc)
+         */
+        sort_order?: string;
+    };
+    url: '/stamps/{region}/list';
+};
+
+export type GetStampsByRegionListErrors = {
+    /**
+     * Bad Request
+     */
+    400: SharedErrorResponse;
+    /**
+     * Internal Server Error
+     */
+    500: SharedErrorResponse;
+    /**
+     * Service Unavailable
+     */
+    503: SharedErrorResponse;
+};
+
+export type GetStampsByRegionListError = GetStampsByRegionListErrors[keyof GetStampsByRegionListErrors];
+
+export type GetStampsByRegionListResponses = {
+    /**
+     * OK
+     */
+    200: SharedStampListResponse;
+};
+
+export type GetStampsByRegionListResponse = GetStampsByRegionListResponses[keyof GetStampsByRegionListResponses];
 
 export type GetSubGameCharactersByRegionListData = {
     body?: never;

@@ -100,7 +100,7 @@ describe("CharacterRankCard", () => {
     expect(screen.getByText("Rank 5")).toBeTruthy();
     const rank5Rewards = screen.getByText("Rank 5").closest("li")!.lastElementChild as HTMLElement;
     expect(Array.from(rank5Rewards.children, (reward) => text(reward))).toEqual([
-      "Honor ×1",
+      "Title ×1",
       "Crystals ×300"
     ]);
     // Only honor ranks are milestones; the EXP a rank needs sits under its label.
@@ -108,14 +108,24 @@ describe("CharacterRankCard", () => {
     expect(screen.queryByText("Rank 8")).toBeNull();
     expect(screen.queryByText("Rank 1")).toBeNull();
 
-    const milestoneList = screen.getByText("Rank 5").closest("ul")!;
-    expect(milestoneList.classList).toContain("columns-[17rem]");
+    // A column-flow grid, not CSS columns, so reward tooltips are never split across columns.
+    const expectColumnFlow = (list: HTMLElement) => {
+      const count = list.querySelectorAll(":scope > li").length;
+      expect(list.classList).toContain("grid-flow-col");
+      expect(list.classList).not.toContain("columns-[17rem]");
+      for (const columns of [1, 2, 3, 4]) {
+        expect(list.style.getPropertyValue(`--rows-${columns}`)).toBe(
+          String(Math.ceil(count / columns))
+        );
+      }
+    };
+    expectColumnFlow(screen.getByText("Rank 5").closest("ul")!);
 
     const toggle = screen.getByRole("button", { name: "Show all 5 ranks" });
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     await fireEvent.click(toggle);
     expect(screen.getByRole("heading", { name: "All ranks" })).toBeTruthy();
-    expect(screen.getByText("Rank 1").closest("ul")!.classList).toContain("columns-[17rem]");
+    expectColumnFlow(screen.getByText("Rank 1").closest("ul")!);
     expect(screen.getByText("Rank 1").closest("li")!.hasAttribute("data-milestone")).toBe(false);
     expect(screen.getByText("Rank 8").closest("li")!.hasAttribute("data-milestone")).toBe(false);
     expect(text(screen.getByText("Rank 8").parentElement)).toBe("Rank 8 18 EXP total");

@@ -57,12 +57,17 @@ mode.
 
 Use semantic roles supplied by the app or shared token package instead of placing
 raw colors in components. `packages/ui-tokens/src/design-tokens.json` defines the
-portable vocabulary: `color.surface.canvas`, `sunken`, `default`, `raised`, and
-`overlay`; `color.text`; `color.border`; `color.accent`; `color.status`; and
+portable vocabulary: `color.surface.canvas`, `sunken`, `default`, `raised`, `overlay`, and
+`assetBackdrop`; `color.text`; `color.border`; `color.accent`; `color.status`; and
 `color.focus`. It also defines spacing, radius, icon, and motion values. The
 values in that JSON are the source of truth for portable tokens; do not invent a
 new numeric value in this document or imply that every app currently emits those
 tokens as CSS variables.
+
+`color.surface.assetBackdrop` is the fixed light ground behind game artwork that
+is drawn for a light background, such as unit icons. It does not change with the
+palette or dark mode. `@platform/ui-tokens/utilities.css` emits it as
+`--archive-surface-asset-backdrop` for every app.
 
 `content-site` additionally implements the Prismatic Archive roles in
 `apps/content-site/src/app.css`, including `--archive-surface-*`,

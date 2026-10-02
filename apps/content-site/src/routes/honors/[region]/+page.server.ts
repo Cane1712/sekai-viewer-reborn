@@ -1,7 +1,9 @@
 import { normalizeRegion } from "$lib/i18n/region";
 import { getMasterApiBaseUrl } from "$lib/server/config";
 import {
+  BONDS_HONOR_TYPE,
   createEmptyHonorListPage,
+  fetchBondsHonorViewData,
   fetchHonorListPage,
   parseHonorListQueryState
 } from "$lib/server/honor-list";
@@ -15,6 +17,11 @@ export const load: PageServerLoad = ({ params, url }) => {
     .catch(() => ({ ...createEmptyHonorListPage(1), loadFailed: true as const }));
 
   catalogue.catch(() => {});
+  // Only the Bonds category needs the Virtual Singer outfit option's unit data.
+  const bondsView =
+    query.honorType === BONDS_HONOR_TYPE
+      ? fetchBondsHonorViewData(getMasterApiBaseUrl(), region).catch(() => null)
+      : Promise.resolve(null);
 
-  return { region, query, catalogue };
+  return { region, query, catalogue, bondsView };
 };

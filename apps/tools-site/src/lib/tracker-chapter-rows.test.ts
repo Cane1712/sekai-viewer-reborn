@@ -7,7 +7,10 @@ const ranking = (rank: number, score = rank * 100) => ({
   userId: `user-${rank}`,
   userName: `Player ${rank}`,
   eventId: 1,
-  timestamp: null
+  timestamp: null,
+  leaderCard: null,
+  profileHonors: [],
+  honorMissions: []
 });
 
 const chapterStartAt = "2026-01-01T00:00:00.000Z";

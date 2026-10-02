@@ -54,6 +54,9 @@ export const createChapterRows = (
           userName: null,
           eventId: null,
           timestamp: null,
+          leaderCard: null,
+          profileHonors: [],
+          honorMissions: [],
           status: "unavailable"
         };
   });

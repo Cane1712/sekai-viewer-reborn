@@ -4,7 +4,7 @@
   import AssetImage from "$lib/components/shared/AssetImage.svelte";
   import EventCardFrame from "$lib/components/shared/EventCardFrame.svelte";
   import type { SupportedRegion } from "$lib/domain/regions";
-  import type { VirtualLiveListItem } from "$lib/domain/virtual-live";
+  import { getVirtualLiveBannerBundle, type VirtualLiveListItem } from "$lib/domain/virtual-live";
   import { getContentDisplaySettings } from "$lib/settings/content-display";
   import {
     EVENT_LIST_CARD_FRAME_CLASS,
@@ -35,6 +35,7 @@
   } = $props();
 
   const contentDisplaySettings = getContentDisplaySettings();
+  const bannerBundle = $derived(getVirtualLiveBannerBundle(item));
   const spoilerRevealAnimationMs = 180;
   let spoilerRevealed = $state(false);
   let spoilerRevealAnimating = $state(false);
@@ -116,9 +117,9 @@
           {ongoingLabel}
         </span>
       {/if}
-      {#if item.assetBundleName}
+      {#if bannerBundle}
         <AssetImage
-          src={getVirtualLiveBannerAssetURL(item.assetBundleName, region)}
+          src={getVirtualLiveBannerAssetURL(bannerBundle, region)}
           alt={`${item.name ?? item.id} ${bannerAltSuffix}`}
           imageClass={EVENT_LIST_CARD_IMAGE_CLASS}
           buttonClass="block h-full w-full overflow-hidden"

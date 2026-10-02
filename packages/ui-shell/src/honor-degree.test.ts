@@ -1,5 +1,5 @@
-import { render } from "@testing-library/svelte";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render } from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HonorDegree from "./honor-degree.svelte";
 import {
   bondsHonorLocalAssetResources,
@@ -11,7 +11,8 @@ import {
 import type {
   HonorDegreeAssetResolver,
   HonorDegreeInput,
-  HonorDegreeSlot
+  HonorDegreeSlot,
+  NormalHonorDegree
 } from "./honor-degree.types";
 
 const resolveAsset: HonorDegreeAssetResolver = (bundle, resource) => `/${bundle}/${resource}`;
@@ -124,7 +125,7 @@ describe("HonorDegree", () => {
       ).toEqual(["body", "frame", "rank"]);
       const rank = container.querySelector('[data-layer="rank"]');
       expect(["x", "y", "width", "height"].map((key) => rank?.getAttribute(key))).toEqual(
-        slot === "main" ? ["190", "1", "150", "78"] : ["60", "0", "120", "38"]
+        slot === "main" ? ["190", "1", "150", "78"] : ["30", "42", "120", "38"]
       );
     }
   );
@@ -177,8 +178,8 @@ describe("HonorDegree", () => {
     );
 
     expect(layout.layers[2]).toMatchObject({
-      x: 60,
-      y: 0,
+      x: 30,
+      y: 42,
       width: 120,
       height: 38
     });
@@ -324,7 +325,7 @@ describe("HonorDegree", () => {
       expect(layout.layers[2]).toMatchObject(
         slot === "main"
           ? { x: 200, y: 1, width: 180, height: 78 }
-          : { x: 11, y: 0, width: 158, height: 40 }
+          : { x: 11, y: 40, width: 158, height: 40 }
       );
       expect(
         buildHonorDegreeLayout({ kind: "rank-match", assetBundleName: "tier" }, resolveAsset)
@@ -395,44 +396,6 @@ describe("HonorDegree", () => {
     ).toEqual(["body"]);
   });
 
-  it("renders supplied bonds layers only and reverses the independent sub root", () => {
-    const asset = (resourceName: string) => ({ bundlePath: "bonds", resourceName });
-    const part = { ...asset("character"), x: 5, y: 0, width: 80, height: 80 };
-    const { container, getByRole } = render(HonorDegree, {
-      honor: {
-        kind: "bonds",
-        reverse: true,
-        rarity: "high",
-        background: asset("background"),
-        pattern: asset("pattern"),
-        characters: [part, null],
-        word: { ...part, resourceName: "word" }
-      },
-      resolveAsset,
-      slot: "sub2"
-    });
-    expect(getByRole("img").getAttribute("viewBox")).toBe("0 0 180 80");
-    expect(container.querySelector("g")?.getAttribute("transform")).toBe(
-      "translate(180,0) scale(-1,1)"
-    );
-    expect(
-      [...container.querySelectorAll("image")].map((image) => image.getAttribute("data-layer"))
-    ).toEqual(["body", "pattern", "character-0", "frame", "word"]);
-    expect(container.querySelector('[data-layer="body"]')?.getAttribute("href")).toBe(
-      "/bonds/background"
-    );
-    expect(container.querySelector('[data-layer="frame"]')?.getAttribute("href")).toBe(
-      "/local/honor/frame_degree_s_3"
-    );
-    const frame = container.querySelector('[data-layer="frame"]');
-    expect(["x", "y", "width", "height"].map((key) => frame?.getAttribute(key))).toEqual([
-      "0",
-      "0",
-      "180",
-      "80"
-    ]);
-  });
-
   it("exports only the verified local Bonds and Live Master resource names", () => {
     expect(bondsHonorLocalAssetResources).toEqual({
       bundlePath: "local/bonds-honor",
@@ -446,139 +409,209 @@ describe("HonorDegree", () => {
     expect(liveMasterLocalAssetResources).toEqual({
       bundlePath: "local/live-master",
       star1: "live_master_honor_star_1",
-      star2: "live_master_honor_star_2"
+      star2: "live_master_honor_star_2",
+      numberPrefix: "number_"
     });
   });
 
-  it("paints ordered Bonds backgrounds before pattern, characters, frame, and word", () => {
-    const asset = (resourceName: string, bundlePath = "bonds") => ({
-      bundlePath,
-      resourceName
+  const bondsHonor = {
+    kind: "bonds",
+    rarity: "high",
+    level: 3,
+    colors: ["#33ccbb", "#3366cc"],
+    characters: [
+      { bundlePath: "bonds_honor/character", resourceName: "chr_sd_21_01" },
+      { bundlePath: "bonds_honor/character", resourceName: "chr_sd_26_01" }
+    ],
+    word: { bundlePath: "bonds_honor/word", resourceName: "honorname_2126_01_03" }
+  } satisfies HonorDegreeInput;
+
+  it("lays out a main Bonds honor as the game's UIPartsBondsHonorImage", () => {
+    const layout = buildHonorDegreeLayout(bondsHonor, resolveAsset, "main");
+
+    // Right half: degree_bgBase (52/52 borders, zero-width centre) across the root,
+    // tinted with the second unit; left half: degree_bgColor (59/7) over 193.
+    expect(layout.bonds?.backgrounds).toEqual([
+      {
+        color: "#3366cc",
+        image: {
+          href: "/local/bonds-honor/degree_bgBase",
+          sourceWidth: 104,
+          sourceHeight: 80,
+          y: 0,
+          height: 80,
+          columns: [
+            { x: 0, width: 52, sourceX: 0, sourceWidth: 52 },
+            { x: 52, width: 276, sourceX: 51.5, sourceWidth: 1 },
+            { x: 328, width: 52, sourceX: 52, sourceWidth: 52 }
+          ]
+        }
+      },
+      {
+        color: "#33ccbb",
+        image: {
+          href: "/local/bonds-honor/degree_bgColor",
+          sourceWidth: 72,
+          sourceHeight: 80,
+          y: 0,
+          height: 80,
+          columns: [
+            { x: 0, width: 59, sourceX: 0, sourceWidth: 59 },
+            { x: 59, width: 127, sourceX: 59, sourceWidth: 6 },
+            { x: 186, width: 7, sourceX: 65, sourceWidth: 7 }
+          ]
+        }
+      }
+    ]);
+    expect(layout.bonds?.pattern).toBe("/local/bonds-honor/degree_bgTexture_main");
+    expect(layout.bonds?.characterMask?.columns).toEqual([
+      { x: 0, width: 187, sourceX: 0, sourceWidth: 187 },
+      { x: 187, width: 6, sourceX: 187, sourceWidth: 6 },
+      { x: 193, width: 187, sourceX: 193, sourceWidth: 187 }
+    ]);
+    // 160×136 canvases drawn 1:1, 12 below the bottom edge, flush to each side.
+    expect(layout.bonds?.characters).toEqual([
+      {
+        href: "/bonds_honor/character/chr_sd_21_01",
+        x: 0,
+        y: -44,
+        width: 160,
+        height: 136,
+        window: null
+      },
+      {
+        href: "/bonds_honor/character/chr_sd_26_01",
+        x: 220,
+        y: -44,
+        width: 160,
+        height: 136,
+        window: null
+      }
+    ]);
+    expect(layout.layers.map((layer) => [layer.name, layer.href, layer.x, layer.fit])).toEqual([
+      ["frame", "/local/honor/frame_degree_m_3", 0, "contain"],
+      ["word", "/bonds_honor/word/honorname_2126_01_03", 0, "contain"],
+      ["level-0", "/local/honor/icon_degreeLv", 50, undefined],
+      ["level-1", "/local/honor/icon_degreeLv", 66, undefined],
+      ["level-2", "/local/honor/icon_degreeLv", 82, undefined]
+    ]);
+  });
+
+  it("swaps the units for the reverse view instead of mirroring", () => {
+    const layout = buildHonorDegreeLayout({ ...bondsHonor, reverse: true }, resolveAsset);
+
+    expect(layout.bonds?.backgrounds.map((background) => background.color)).toEqual([
+      "#33ccbb",
+      "#3366cc"
+    ]);
+    expect(layout.bonds?.characters.map((character) => [character.href, character.x])).toEqual([
+      ["/bonds_honor/character/chr_sd_26_01", 0],
+      ["/bonds_honor/character/chr_sd_21_01", 220]
+    ]);
+    const { container } = render(HonorDegree, {
+      honor: { ...bondsHonor, reverse: true },
+      resolveAsset
     });
-    const part = (resourceName: string) => ({
-      ...asset(resourceName),
-      x: 4,
-      y: 2,
-      width: 30,
-      height: 40
-    });
+    expect(container.querySelector("g")?.getAttribute("transform")).toBeNull();
+  });
+
+  it("scales characters into per-side windows and drops the word in a sub slot", () => {
+    const layout = buildHonorDegreeLayout(bondsHonor, resolveAsset, "sub1");
+    const [left, right] = layout.bonds?.characters ?? [];
+
+    expect(layout.width).toBe(180);
+    expect(layout.bonds?.backgrounds[1]?.image.columns).toEqual([
+      { x: 0, width: 59, sourceX: 0, sourceWidth: 59 },
+      { x: 59, width: 27, sourceX: 59, sourceWidth: 6 },
+      { x: 86, width: 7, sourceX: 65, sourceWidth: 7 }
+    ]);
+    expect(layout.bonds?.pattern).toBe("/local/bonds-honor/degree_bgTexture_sub");
+    // mask_degree_main's 187/187 borders exceed 180, so Unity scales them to 90 each.
+    expect(layout.bonds?.characterMask?.columns).toEqual([
+      { x: 0, width: 90, sourceX: 0, sourceWidth: 187 },
+      { x: 90, width: 90, sourceX: 193, sourceWidth: 187 }
+    ]);
+    expect(left?.x).toBeCloseTo(0.05);
+    expect(right?.x).toBeCloseTo(56.8);
+    for (const character of [left, right]) {
+      expect(character?.width).toBeCloseTo(123.2);
+      expect(character?.height).toBeCloseTo(104.72);
+      expect(character?.y).toBeCloseTo(-24.72);
+    }
+    expect(left?.window?.columns[0]?.x).toBeCloseTo(0.05);
+    expect(left?.window?.rotate).toBeUndefined();
+    expect(right?.window?.columns[0]?.x).toBeCloseTo(76.5);
+    expect(right?.window?.rotate).toBe(180);
+    expect(layout.layers.map((layer) => layer.name)).toEqual([
+      "frame",
+      "level-0",
+      "level-1",
+      "level-2"
+    ]);
+    expect(layout.layers[0]?.href).toBe("/local/honor/frame_degree_s_3");
+  });
+
+  it("paints the Bonds body beneath the frame, word, and levels with unique alpha masks", () => {
+    const first = render(HonorDegree, { honor: bondsHonor, resolveAsset });
+    const second = render(HonorDegree, { honor: bondsHonor, resolveAsset });
+
+    expect(
+      [...first.container.querySelectorAll("[data-layer]")].map((node) =>
+        node.getAttribute("data-layer")
+      )
+    ).toEqual([
+      "bonds-background-0",
+      "bonds-background-1",
+      "bonds-pattern",
+      "bonds-character-0",
+      "bonds-character-1",
+      "frame",
+      "word",
+      "level-0",
+      "level-1",
+      "level-2"
+    ]);
+    const masks = [...first.container.querySelectorAll("mask")];
+    expect(masks).toHaveLength(3);
+    for (const mask of masks) expect(mask.getAttribute("mask-type")).toBe("alpha");
+    const background = first.container.querySelector('[data-layer="bonds-background-0"]');
+    expect(background?.getAttribute("fill")).toBe("#3366cc");
+    expect(background?.getAttribute("mask")).toBe(`url(#${masks[0]?.id})`);
+    // Each 9-slice column crops its source span through a nested viewBox.
+    expect(masks[0]?.querySelector("svg")?.getAttribute("viewBox")).toBe("0 0 52 80");
+    const characters = first.container.querySelector('[data-layer="bonds-character-0"]');
+    expect(characters?.parentElement?.parentElement?.getAttribute("mask")).toBe(
+      `url(#${masks[2]?.id})`
+    );
+    const secondIds = [...second.container.querySelectorAll("mask")].map((mask) => mask.id);
+    expect(secondIds).not.toContain(masks[0]?.id);
+  });
+
+  it("omits unresolved Bonds assets and falls back to white halves", () => {
     const layout = buildHonorDegreeLayout(
       {
         kind: "bonds",
-        backgrounds: [
-          asset(
-            bondsHonorLocalAssetResources.backgroundBase,
-            bondsHonorLocalAssetResources.bundlePath
-          ),
-          asset(
-            bondsHonorLocalAssetResources.backgroundColor,
-            bondsHonorLocalAssetResources.bundlePath
-          )
-        ],
-        pattern: asset("pattern"),
-        characters: [part("character-main"), part("character-sub")],
-        rarity: "middle",
-        word: part("word")
+        colors: [null, undefined],
+        characters: [{ bundlePath: "bonds_honor/character", resourceName: "chr_sd_01_01" }, null]
       },
-      resolveAsset
+      (bundle, resource) => (bundle === "bonds_honor/character" ? null : `/${bundle}/${resource}`)
     );
 
-    expect(layout.layers.map((layer) => layer.name)).toEqual([
-      "background-0",
-      "background-1",
-      "pattern",
-      "character-0",
-      "character-1",
-      "frame",
-      "word"
+    expect(layout.bonds?.backgrounds.map((background) => background.color)).toEqual([
+      "#ffffff",
+      "#ffffff"
     ]);
-    expect(layout.layers.map((layer) => layer.href)).toEqual([
-      `/local/bonds-honor/${bondsHonorLocalAssetResources.backgroundBase}`,
-      `/local/bonds-honor/${bondsHonorLocalAssetResources.backgroundColor}`,
-      "/bonds/pattern",
-      "/bonds/character-main",
-      "/bonds/character-sub",
-      "/local/honor/frame_degree_m_2",
-      "/bonds/word"
-    ]);
-  });
+    expect(layout.bonds?.characters).toEqual([]);
+    expect(layout.layers).toEqual([]);
 
-  it("renders caller-specified character masks with unique IDs inside the mirrored root", () => {
-    const character = {
-      bundlePath: "bonds",
-      resourceName: "character",
-      x: 24,
-      y: 3,
-      width: 70,
-      height: 74,
-      mask: {
-        bundlePath: bondsHonorLocalAssetResources.bundlePath,
-        resourceName: bondsHonorLocalAssetResources.maskMain,
-        x: 20,
-        y: 1,
-        width: 76,
-        height: 78
-      }
-    };
-    const props = {
-      honor: { kind: "bonds", reverse: true, characters: [character, null] },
-      resolveAsset
-    } as const;
-    const first = render(HonorDegree, props);
-    const second = render(HonorDegree, props);
-    const firstMask = first.container.querySelector("mask");
-    const characterImage = first.container.querySelector('[data-layer="character-0"]');
-    const rootGroup = first.container.querySelector("g");
-
-    expect(firstMask?.getAttribute("mask-type")).toBe("alpha");
-    expect(firstMask?.getAttribute("maskUnits")).toBe("userSpaceOnUse");
-    expect(firstMask?.getAttribute("maskContentUnits")).toBe("userSpaceOnUse");
-    expect(
-      ["x", "y", "width", "height"].map((attribute) => firstMask?.getAttribute(attribute))
-    ).toEqual(["20", "1", "76", "78"]);
-    expect(firstMask?.querySelector("image")?.getAttribute("href")).toBe(
-      `/local/bonds-honor/${bondsHonorLocalAssetResources.maskMain}`
-    );
-    expect(characterImage?.getAttribute("mask")).toBe(`url(#${firstMask?.id})`);
-    expect(firstMask?.closest("g")).toBe(rootGroup);
-    expect(rootGroup?.getAttribute("transform")).toBe("translate(380,0) scale(-1,1)");
-    expect(second.container.querySelector("mask")?.id).not.toBe(firstMask?.id);
-  });
-
-  it("omits absent and unresolved Bonds layers and masks", () => {
-    expect(buildHonorDegreeLayout({ kind: "bonds" }, resolveAsset).layers).toEqual([]);
-
-    const character = {
-      bundlePath: "bonds",
-      resourceName: "character",
-      x: 0,
-      y: 0,
-      width: 80,
-      height: 80,
-      mask: {
-        bundlePath: "bonds",
-        resourceName: "unresolved-mask",
-        x: 0,
-        y: 0,
-        width: 80,
-        height: 80
-      }
-    };
-    const layout = buildHonorDegreeLayout(
-      { kind: "bonds", characters: [character, null] },
-      (_bundle, resource) => (resource === "character" ? "/character.png" : null)
-    );
-
-    expect(layout.layers).toEqual([
-      {
-        name: "character-0",
-        href: "/character.png",
-        x: 0,
-        y: 0,
-        width: 80,
-        height: 80
-      }
-    ]);
+    const bare = buildHonorDegreeLayout(bondsHonor, () => null);
+    expect(bare.bonds).toEqual({
+      backgrounds: [],
+      pattern: null,
+      characterMask: null,
+      characters: []
+    });
+    expect(bare.layers).toEqual([]);
   });
 
   it("draws valid live-master parts last and omits unresolved assets", () => {
@@ -713,8 +746,173 @@ describe("HonorDegree", () => {
       slot: "sub2",
       size: "S"
     });
-    expect(getByRole("img", { name: "Honor" }).style.width).toBe("126px");
+    expect(getByRole("img", { name: "Title" }).style.width).toBe("126px");
     expect(getByRole("img").style.height).toBe("56px");
-    expect(container.querySelector("text")?.textContent).toBe("Honor");
+    expect(container.querySelector("text")?.textContent).toBe("Title");
+  });
+});
+
+describe("HonorDegree loading placeholder", () => {
+  // Settled images are remembered for the page, so each test uses its own asset paths.
+  const resolverFor =
+    (prefix: string): HonorDegreeAssetResolver =>
+    (bundle, resource) =>
+      `/${prefix}/${bundle}/${resource}`;
+  let loads: { src: string; resolve: () => void; reject: (error: Error) => void }[] = [];
+  // Settles through onload/onerror, as the browser does, once the test resolves or rejects it.
+  class FakeImage {
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    set src(value: string) {
+      loads.push({
+        src: value,
+        resolve: () => this.onload?.(),
+        reject: () => this.onerror?.()
+      });
+    }
+  }
+
+  beforeEach(() => {
+    loads = [];
+    vi.stubGlobal("Image", FakeImage);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const placeholder = (container: HTMLElement) =>
+    container.querySelector("[data-honor-degree-placeholder]");
+  const layers = (container: HTMLElement) => container.querySelector('svg > g[aria-hidden="true"]');
+
+  it("shows a placeholder and hides the layers until every image has loaded", async () => {
+    const { container } = render(HonorDegree, {
+      honor: normal,
+      resolveAsset: resolverFor("loading"),
+      label: "Achievement"
+    });
+
+    expect(placeholder(container)?.getAttribute("rx")).toBe("40");
+    expect(layers(container)?.classList).toContain("opacity-0");
+    const hrefs = new Set(
+      [...container.querySelectorAll("image")].map((image) => image.getAttribute("href"))
+    );
+    expect(new Set(loads.map((load) => load.src))).toEqual(hrefs);
+
+    for (const load of loads.slice(0, -1)) load.resolve();
+    await Promise.resolve();
+    expect(placeholder(container)).not.toBeNull();
+
+    loads.at(-1)?.resolve();
+    await vi.waitFor(() => expect(placeholder(container)).toBeNull());
+    expect(layers(container)?.classList).toContain("opacity-100");
+  });
+
+  it("ends the placeholder when an image fails", async () => {
+    const { container } = render(HonorDegree, {
+      honor: normal,
+      resolveAsset: resolverFor("failing"),
+      label: "Achievement"
+    });
+
+    loads[0]?.reject(new Error("broken"));
+    for (const load of loads.slice(1)) load.resolve();
+
+    await vi.waitFor(() => expect(placeholder(container)).toBeNull());
+    expect(layers(container)?.classList).toContain("opacity-100");
+  });
+
+  it("draws a title whose images already loaded without a placeholder", async () => {
+    const props = { honor: normal, resolveAsset: resolverFor("cached"), label: "Achievement" };
+    const first = render(HonorDegree, props);
+    for (const load of loads) load.resolve();
+    await vi.waitFor(() => expect(placeholder(first.container)).toBeNull());
+    cleanup();
+    loads = [];
+
+    const { container } = render(HonorDegree, props);
+
+    expect(placeholder(container)).toBeNull();
+    expect(layers(container)?.classList).toContain("opacity-100");
+    expect(loads).toHaveLength(0);
+  });
+
+  it("shows no placeholder for a title drawn as text", () => {
+    const { container } = render(HonorDegree, {
+      honor: { kind: "empty" },
+      resolveAsset: resolverFor("empty")
+    });
+
+    expect(placeholder(container)).toBeNull();
+    expect(loads).toHaveLength(0);
+  });
+});
+
+describe("Live Master parts", () => {
+  const resolve = (bundlePath: string, resourceName: string) => `${bundlePath}/${resourceName}`;
+  const honor: NormalHonorDegree & {
+    liveMaster: NonNullable<NormalHonorDegree["liveMaster"]>;
+  } = {
+    kind: "normal",
+    honorType: "live-master",
+    assetBundleName: "honor_3009_100",
+    rarity: 1,
+    level: 13,
+    liveMaster: {
+      scroll: { bundlePath: "honor/honor_3009_100", resourceName: "scroll.png" },
+      clearCount: 107
+    }
+  };
+
+  it("draws the scroll, lit and unlit stars, and the clear count in the main slot", () => {
+    const layers = buildHonorDegreeLayout(honor, resolve, "main").layers;
+    const scroll = layers.find((layer) => layer.name === "live-master-scroll");
+    expect(scroll).toMatchObject({ x: 218.2, y: 2.5, width: 101, height: 75 });
+    expect(layers.filter((layer) => layer.name.startsWith("live-master-star-off"))).toHaveLength(
+      10
+    );
+    const lit = layers.filter((layer) => layer.name.startsWith("live-master-star-on"));
+    expect(lit).toHaveLength(3);
+    // Star 1 sits at the bottom of the left arc.
+    expect(lit[0].x).toBeCloseTo(222.93);
+    expect(lit[0].y).toBeCloseTo(60.17);
+    const digits = layers.filter((layer) => layer.name.startsWith("live-master-digit"));
+    expect(digits.map((layer) => layer.href)).toEqual([
+      "local/live-master/number_1",
+      "local/live-master/number_0",
+      "local/live-master/number_7"
+    ]);
+    expect(digits[0].width).toBeCloseTo(13 * 0.891);
+    expect(digits[0].y).toBeCloseTo(60.01 - (17.95 / 2) * 0.891);
+    const left = digits[0].x;
+    const right = digits[2].x + digits[2].width;
+    expect((left + right) / 2).toBeCloseTo(268.7, 0);
+  });
+
+  it("lights ten stars on whole tens, hides stars in the sub slot, and drops leading zeros", () => {
+    const tenth = buildHonorDegreeLayout({ ...honor, level: 20 }, resolve, "main").layers;
+    expect(tenth.filter((layer) => layer.name.startsWith("live-master-star-on"))).toHaveLength(10);
+
+    const sub = buildHonorDegreeLayout(
+      { ...honor, liveMaster: { ...honor.liveMaster, clearCount: 5 } },
+      resolve,
+      "sub1"
+    ).layers;
+    expect(sub.some((layer) => layer.name.startsWith("live-master-star"))).toBe(false);
+    expect(sub.find((layer) => layer.name === "live-master-scroll")).toMatchObject({
+      x: 40,
+      y: 2.5
+    });
+    const digits = sub.filter((layer) => layer.name.startsWith("live-master-digit"));
+    expect(digits.map((layer) => layer.href)).toEqual(["local/live-master/number_5"]);
+    expect(digits[0].x + digits[0].width / 2).toBeCloseTo(90.5, 0);
+  });
+
+  it("omits the number when the clear count is unknown", () => {
+    const layers = buildHonorDegreeLayout(
+      { ...honor, liveMaster: { ...honor.liveMaster, clearCount: null } },
+      resolve,
+      "main"
+    ).layers;
+    expect(layers.some((layer) => layer.name.startsWith("live-master-digit"))).toBe(false);
   });
 });

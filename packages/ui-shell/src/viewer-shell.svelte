@@ -245,11 +245,29 @@
     box-shadow: 0 4px 14px color-mix(in oklab, var(--color-base-content) 7%, transparent);
   }
 
+  /* Frosted glass: the page shows through a lighter tint, and the edge reads as glass
+     through a light rim, a top highlight, a faint bottom edge, and a hairline outline. */
   @supports (backdrop-filter: blur(1px)) {
     .viewer-shell-nav {
-      background: color-mix(in oklab, var(--color-base-100) 82%, transparent);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: color-mix(in oklab, var(--color-base-100) 62%, transparent);
+      border-color: color-mix(in oklab, var(--color-base-100) 75%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--color-base-100) 90%, transparent),
+        inset 0 -1px 0 color-mix(in oklab, var(--color-base-content) 6%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--color-base-content) 8%, transparent),
+        0 6px 20px color-mix(in oklab, var(--color-base-content) 9%, transparent);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+    }
+
+    /* On a dark base the rim and highlight come from the light foreground instead. */
+    :global(:root.dark) .viewer-shell-nav {
+      border-color: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+      box-shadow:
+        inset 0 1px 0 color-mix(in oklab, var(--color-base-content) 18%, transparent),
+        inset 0 -1px 0 color-mix(in oklab, var(--color-base-100) 40%, transparent),
+        0 0 0 1px color-mix(in oklab, var(--color-base-100) 50%, transparent),
+        0 6px 20px color-mix(in oklab, var(--color-base-300) 70%, transparent);
     }
   }
 
