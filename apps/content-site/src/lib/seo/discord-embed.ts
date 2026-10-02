@@ -1,5 +1,6 @@
-// English-only Discord link preview helpers (standard Open Graph fallback +
-// inline component embed) for content-site detail pages.
+// Link preview helpers (standard Open Graph tags for social crawlers + an
+// inline Discord component embed) for content-site detail pages. User-facing
+// text arrives pre-localized through label arguments.
 //
 // See https://github.com/discord/discord-api-docs/pull/8606 — a component
 // embed replaces the standard preview with a layout built from Discord
@@ -193,9 +194,9 @@ export const parseTrainedParam = (value: string | null | undefined): boolean => 
 
 /**
  * Validate a request origin for public embeds. The origin is trusted as
- * SvelteKit reports it, so deployments behind a TLS-terminating proxy must
- * configure adapter-node's `ORIGIN` (or `PROTOCOL_HEADER`/`HOST_HEADER`)
- * rather than relying on a rewrite here.
+ * SvelteKit reports it: adapter-node defaults the protocol to https and takes
+ * the host from the Host header (pin it with `ORIGIN` if needed). A plain-http
+ * origin only occurs under `vite dev`, e.g. behind a tunnel.
  */
 const normalizePublicOrigin = (origin: string | null | undefined): string | null => {
   const trimmed = origin?.trim() ?? "";
@@ -389,9 +390,6 @@ const RARITY_STAR_COUNT_BY_TYPE: Record<string, number> = {
   rarity_4: 4
 };
 
-const capitalize = (value: string): string =>
-  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
-
 const formatRarity = (rarityType: string | null, birthdayLabel: string): string | null => {
   if (!rarityType) {
     return null;
@@ -404,11 +402,8 @@ const formatRarity = (rarityType: string | null, birthdayLabel: string): string 
   }
 
   const count = RARITY_STAR_COUNT_BY_TYPE[normalized];
-  if (count) {
-    return `★${count}`;
-  }
-
-  return rarityType.trim();
+  // Unknown rarity types are omitted rather than showing a raw identifier.
+  return count ? `★${count}` : null;
 };
 
 export const formatCharacterName = (
@@ -433,6 +428,8 @@ export type CardEmbedSource = {
 export type CardMetaLabels = {
   trained: string;
   birthday: string;
+  /** Localized attribute names keyed by the lowercase API value (`cool`, `cute`, ...). */
+  attributes: Record<string, string>;
 };
 
 export const buildCardMetaLine = (
@@ -445,8 +442,9 @@ export const buildCardMetaLine = (
   if (rarity) {
     parts.push(rarity);
   }
-  if (card.attr) {
-    parts.push(capitalize(card.attr.trim()));
+  const attribute = card.attr ? labels.attributes[card.attr.trim().toLowerCase()] : null;
+  if (attribute) {
+    parts.push(attribute);
   }
   const characterName = formatCharacterName(card.characterFirstName, card.characterGivenName);
   if (characterName) {
@@ -517,13 +515,19 @@ export type EventEmbedSource = {
   eventType?: string | null;
 };
 
-export const buildEventMetaLine = (event: EventEmbedSource): string => {
+export type EventMetaLabels = {
+  /** Localized event type names keyed by the API value (`marathon`, `cheerful_carnival`, ...). */
+  eventTypes: Record<string, string>;
+};
+
+export const buildEventMetaLine = (event: EventEmbedSource, labels: EventMetaLabels): string => {
   const parts: string[] = [];
   if (event.unitName) {
     parts.push(event.unitName.trim());
   }
-  if (event.eventType) {
-    parts.push(capitalize(event.eventType.trim()));
+  const eventType = event.eventType ? labels.eventTypes[event.eventType.trim()] : null;
+  if (eventType) {
+    parts.push(eventType);
   }
 
   return parts.join(" · ");

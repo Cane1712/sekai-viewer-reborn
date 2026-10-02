@@ -42,7 +42,7 @@ describe("music detail page load", () => {
     getMusicsRegionsByIdAvailability.mockResolvedValue({ data: ["jp"] });
     getServerI18nText.mockReset();
     getServerI18nText.mockImplementation((_locale, key) =>
-      Promise.resolve(messages[key as keyof typeof messages])
+      Promise.resolve(messages[key as keyof typeof messages] ?? `t:${key}`)
     );
     getMasterApiBaseUrl.mockReset();
     getMasterApiBaseUrl.mockReturnValue("https://master-api.test");

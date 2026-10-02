@@ -221,7 +221,14 @@ describe("buildDiscordEmbedSeo", () => {
 });
 
 describe("embed meta lines", () => {
-  const cardLabels = { trained: "Trained", birthday: "Birthday" };
+  const attributeLabels = {
+    cool: "Cool",
+    cute: "Cute",
+    happy: "Happy",
+    mysterious: "Mysterious",
+    pure: "Pure"
+  };
+  const cardLabels = { trained: "Trained", birthday: "Birthday", attributes: attributeLabels };
   const creditLabels = { composer: "Composer", arranger: "Arranger", lyricist: "Lyricist" };
 
   it("formats card rarity, attribute, character, and trained state", () => {
@@ -257,20 +264,38 @@ describe("embed meta lines", () => {
     const line = buildCardMetaLine(
       { title: "T", attr: "cool", rarityType: "rarity_birthday", flavorText: null },
       false,
-      { trained: "特訓後", birthday: "誕生日" }
+      { trained: "特訓後", birthday: "誕生日", attributes: { cool: "クール" } }
     );
-    expect(line).toBe("誕生日 · Cool");
+    expect(line).toBe("誕生日 · クール");
     expect(line).not.toContain("★");
   });
 
-  it("passes unknown rarity types through, including the gacha rate key", () => {
+  it("omits unknown rarity types instead of showing a raw identifier", () => {
     expect(
       buildCardMetaLine(
-        { title: "T", attr: null, rarityType: "rarity_4_birthday", flavorText: null },
+        { title: "T", attr: "cool", rarityType: "rarity_4_birthday", flavorText: null },
         false,
         cardLabels
       )
-    ).toBe("rarity_4_birthday");
+    ).toBe("Cool");
+  });
+
+  it("localizes the attribute and omits unknown attributes", () => {
+    const labels = { ...cardLabels, attributes: { cute: "キュート" } };
+    expect(
+      buildCardMetaLine(
+        { title: "T", attr: " CUTE ", rarityType: "rarity_3", flavorText: null },
+        false,
+        labels
+      )
+    ).toBe("★3 · キュート");
+    expect(
+      buildCardMetaLine(
+        { title: "T", attr: "unheard_of", rarityType: "rarity_3", flavorText: null },
+        false,
+        labels
+      )
+    ).toBe("★3");
   });
 
   it("prefers flavor text for card descriptions", () => {
@@ -312,7 +337,8 @@ describe("embed meta lines", () => {
     expect(
       buildCardMetaLine({ title: "T", attr: null, rarityType: null, flavorText: null }, true, {
         trained: "特訓後",
-        birthday: "誕生日"
+        birthday: "誕生日",
+        attributes: {}
       })
     ).toBe("特訓後");
   });
@@ -369,10 +395,36 @@ describe("embed meta lines", () => {
     ).toBe(null);
   });
 
-  it("formats event unit and type", () => {
+  it("formats event unit and localized type", () => {
+    const eventTypes = {
+      marathon: "Marathon",
+      cheerful_carnival: "Cheerful Carnival",
+      world_bloom: "World Link"
+    };
     expect(
-      buildEventMetaLine({ title: "Event", unitName: "Leo/need", eventType: "marathon" })
+      buildEventMetaLine(
+        { title: "Event", unitName: "Leo/need", eventType: "marathon" },
+        { eventTypes }
+      )
     ).toBe("Leo/need · Marathon");
+    expect(buildEventMetaLine({ title: "E", eventType: "cheerful_carnival" }, { eventTypes })).toBe(
+      "Cheerful Carnival"
+    );
+    expect(
+      buildEventMetaLine(
+        { title: "E", eventType: "cheerful_carnival" },
+        { eventTypes: { cheerful_carnival: "チアフルカーニバル" } }
+      )
+    ).toBe("チアフルカーニバル");
+  });
+
+  it("omits an unknown event type instead of showing a raw identifier", () => {
+    expect(
+      buildEventMetaLine(
+        { title: "E", unitName: "Leo/need", eventType: "brand_new_type" },
+        { eventTypes: {} }
+      )
+    ).toBe("Leo/need");
   });
 });
 

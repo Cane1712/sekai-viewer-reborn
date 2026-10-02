@@ -226,7 +226,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         rawPayloadJson: null
       } satisfies RegionMusicLookup);
 
-  // Server-render the link preview for Discord's crawler (no JS execution);
+  // Server-render the link preview for link-preview crawlers (no JS execution);
   // browsers keep the streaming path. The budget guard keeps slow upstream
   // responses from blowing Discord's 10s unfurl window.
   let seo: DiscordEmbedSeo | null = null;

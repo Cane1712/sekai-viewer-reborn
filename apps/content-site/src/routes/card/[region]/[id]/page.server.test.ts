@@ -277,6 +277,7 @@ describe("card detail page load", () => {
         `https://viewer.example/card/jp/1${trained ? "?trained=true" : ""}`
       );
       expect(metaLineOf(result).includes("t:discordEmbedTrained")).toBe(trained);
+      expect(metaLineOf(result)).toContain("t:discordEmbedAttrCool");
     });
 
     it("uses localized labels for the title context and the open button", async () => {

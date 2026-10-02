@@ -76,7 +76,15 @@ export type ContentSiteServerMessageKey =
   | "discordEmbedFeaturing"
   | "discordEmbedTitleCards"
   | "discordEmbedTitleMusic"
-  | "discordEmbedTitleEvents";
+  | "discordEmbedTitleEvents"
+  | "discordEmbedAttrCool"
+  | "discordEmbedAttrCute"
+  | "discordEmbedAttrHappy"
+  | "discordEmbedAttrMysterious"
+  | "discordEmbedAttrPure"
+  | "discordEmbedEventMarathon"
+  | "discordEmbedEventCheerfulCarnival"
+  | "discordEmbedEventWorldLink";
 
 const DEFAULT_SEKAI_I18N_BASE_URL = "https://sekai-world.github.io/sekai-i18n-reborn";
 export const SERVER_I18N_BUNDLE_TIMEOUT_MS = 2_500;

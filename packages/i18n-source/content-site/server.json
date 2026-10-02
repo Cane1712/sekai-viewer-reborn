@@ -25,5 +25,13 @@
   "discordEmbedFeaturing": "Featuring {title}",
   "discordEmbedTitleCards": "Cards",
   "discordEmbedTitleMusic": "Music",
-  "discordEmbedTitleEvents": "Events"
+  "discordEmbedTitleEvents": "Events",
+  "discordEmbedAttrCool": "Cool",
+  "discordEmbedAttrCute": "Cute",
+  "discordEmbedAttrHappy": "Happy",
+  "discordEmbedAttrMysterious": "Mysterious",
+  "discordEmbedAttrPure": "Pure",
+  "discordEmbedEventMarathon": "Marathon",
+  "discordEmbedEventCheerfulCarnival": "Cheerful Carnival",
+  "discordEmbedEventWorldLink": "World Link"
 }

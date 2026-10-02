@@ -241,8 +241,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         gachas: []
       } satisfies CardDetailFetchResult);
 
-  // Discord's crawler never executes JavaScript, so streaming `{#await}` titles
-  // are invisible to it. Resolve the SEO bundle server-side for crawlers only;
+  // Link-preview crawlers never execute JavaScript, so streaming `{#await}`
+  // titles are invisible to them. Resolve the SEO bundle server-side for crawlers only;
   // browsers keep the fast streaming path. The budget guard keeps slow
   // upstream responses from blowing Discord's 10s unfurl window.
   const trained = parseTrainedParam(url?.searchParams.get("trained"));

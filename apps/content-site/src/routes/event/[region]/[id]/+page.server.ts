@@ -320,7 +320,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         rawPayloadJson: null
       } satisfies EventAggregateLookup);
 
-  // Server-render the link preview for Discord's crawler (no JS execution);
+  // Server-render the link preview for link-preview crawlers (no JS execution);
   // browsers keep the streaming path. The budget guard keeps slow upstream
   // responses (the event aggregate can take 20s+) from blowing Discord's
   // 10s unfurl window.
@@ -336,13 +336,19 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
       return buildDiscordEmbedSeo({
         pageTitle: createPageTitle(event.title, labels.titleEvents),
         title: event.title,
-        metaLine: buildEventMetaLine({
-          title: event.title,
-          unitName: event.unitName ?? event.unit,
-          eventType: event.eventType
-        }),
+        metaLine: buildEventMetaLine(
+          {
+            title: event.title,
+            unitName: event.unitName ?? event.unit,
+            eventType: event.eventType
+          },
+          labels
+        ),
         description: aggregate.relatedData?.musics?.[0]?.title
-          ? labels.featuring.replace("{title}", aggregate.relatedData.musics[0].title)
+          ? labels.featuring.replace(
+              "{title}",
+              () => aggregate.relatedData?.musics?.[0]?.title ?? ""
+            )
           : null,
         imageUrl: resolveEmbedImageUrl(
           event.assetBundleName,

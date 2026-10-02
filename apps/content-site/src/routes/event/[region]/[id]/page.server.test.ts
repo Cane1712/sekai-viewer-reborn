@@ -414,6 +414,7 @@ describe("event detail page load", () => {
       const twitter = await runCrawlerLoad("1", "Twitterbot/1.0");
 
       expect(discord.seo?.inlineScriptHtml).toContain("t:discordEmbedOpen");
+      expect(discord.seo?.inlineScriptHtml).toContain("t:discordEmbedEventMarathon");
       expect(twitter.seo).not.toBe(null);
       expect(twitter.seo?.inlineScriptHtml).toBe("");
     });
