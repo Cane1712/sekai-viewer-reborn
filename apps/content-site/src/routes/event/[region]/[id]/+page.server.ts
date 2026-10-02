@@ -8,6 +8,7 @@ import { getServerI18nText } from "$lib/i18n/runtime";
 import { regionLabels, supportedRegions, type SupportedRegion } from "$lib/domain/regions";
 import { normalizeRegion, normalizeUiLocale, UI_LOCALE_COOKIE_NAME } from "$lib/i18n/region";
 import { getMasterApiBaseUrl } from "$lib/server/config";
+import { loadDiscordEmbedLabels } from "$lib/server/discord-embed-labels";
 import {
   parseEventAggregateRelatedData,
   parseEventDetail,
@@ -326,8 +327,9 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   const crawler = isSEOCrawler(request?.headers.get("user-agent"));
   let seo: DiscordEmbedSeo | null = null;
   if (crawler && eventId) {
+    const labelsPromise = loadDiscordEmbedLabels(uiLocale, fetch);
     seo = await resolveSeoWithBudget(async () => {
-      const aggregate = await aggregatePromise;
+      const [aggregate, labels] = await Promise.all([aggregatePromise, labelsPromise]);
       if (!aggregate.event) {
         return null;
       }
@@ -342,7 +344,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         }
       };
       return buildDiscordEmbedSeo({
-        pageTitle: createPageTitle(event.title, "Events"),
+        pageTitle: createPageTitle(event.title, labels.titleEvents),
         title: event.title,
         metaLine: buildEventMetaLine({
           title: event.title,
@@ -350,10 +352,11 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           eventType: event.eventType
         }),
         description: aggregate.relatedData?.musics?.[0]?.title
-          ? `Featuring ${aggregate.relatedData.musics[0].title}`
+          ? labels.featuring.replace("{title}", aggregate.relatedData.musics[0].title)
           : null,
         imageUrl: resolveImageUrl(),
         canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
+        openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });

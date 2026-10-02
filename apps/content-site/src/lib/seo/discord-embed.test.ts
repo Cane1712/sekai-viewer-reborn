@@ -30,9 +30,9 @@ describe("truncateByBytes", () => {
 
 describe("isDiscordCrawler", () => {
   it("detects the Discordbot user agent", () => {
-    expect(
-      isSEOCrawler("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)")
-    ).toBe(true);
+    expect(isSEOCrawler("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)")).toBe(
+      true
+    );
     expect(isSEOCrawler("Discordbot/2.0")).toBe(true);
   });
 
@@ -99,8 +99,23 @@ describe("buildDiscordEmbedSeo", () => {
     metaLine: "★4 · Cool · Hatsune Miku",
     description: "Flavor text",
     imageUrl: "https://assets.example.test/sekai-jp-assets/card.webp",
-    canonicalUrl: "https://viewer.example/card/jp/1"
+    canonicalUrl: "https://viewer.example/card/jp/1",
+    openLabel: "Open"
   };
+
+  it("uses the localized open label for the link button", () => {
+    const seo = buildDiscordEmbedSeo({ ...base, openLabel: "開く" });
+    const payload = JSON.parse(seo?.componentJson ?? "{}");
+    const buttons = payload.component.components.find((c: { type: number }) => c.type === 1);
+    expect(buttons.components[0].label).toBe("開く");
+  });
+
+  it("omits the component script when includeComponent is false", () => {
+    const seo = buildDiscordEmbedSeo({ ...base, includeComponent: false });
+    expect(seo?.title).toBe("Card title");
+    expect(seo?.inlineScriptHtml).toBe("");
+    expect(seo?.componentJson).toBe("");
+  });
 
   it("builds a valid container payload with link button", () => {
     const seo = buildDiscordEmbedSeo(base);
@@ -154,6 +169,8 @@ describe("buildDiscordEmbedSeo", () => {
 });
 
 describe("embed meta lines", () => {
+  const creditLabels = { composer: "Composer", arranger: "Arranger", lyricist: "Lyricist" };
+
   it("formats card rarity, attribute, character, and trained state", () => {
     expect(
       buildCardMetaLine(
@@ -165,7 +182,8 @@ describe("embed meta lines", () => {
           characterGivenName: "Miku",
           flavorText: null
         },
-        true
+        true,
+        "Trained"
       )
     ).toBe("★4 · Cool · Hatsune Miku · Trained");
   });
@@ -186,30 +204,55 @@ describe("embed meta lines", () => {
 
   it("formats music composer, arranger, and lyricist credits", () => {
     expect(
-      buildMusicMetaLine({
-        title: "Song",
-        composer: "Composer",
-        arranger: "Arranger",
-        lyricist: "Lyricist",
-        creatorName: "Artist"
-      })
+      buildMusicMetaLine(
+        {
+          title: "Song",
+          composer: "Composer",
+          arranger: "Arranger",
+          lyricist: "Lyricist",
+          creatorName: "Artist"
+        },
+        creditLabels
+      )
     ).toBe("Composer: Composer · Arranger: Arranger · Lyricist: Lyricist");
+  });
+
+  it("uses the supplied localized labels", () => {
+    expect(
+      buildMusicMetaLine(
+        { title: "Song", composer: "A", arranger: "B", lyricist: null },
+        { composer: "作曲", arranger: "編曲", lyricist: "作詞" }
+      )
+    ).toBe("作曲: A · 編曲: B");
+    expect(
+      buildCardMetaLine(
+        { title: "T", attr: null, rarityType: null, flavorText: null },
+        true,
+        "特訓後"
+      )
+    ).toBe("特訓後");
   });
 
   it("skips missing music credits", () => {
     expect(
-      buildMusicMetaLine({
-        title: "Song",
-        composer: "Composer",
-        arranger: null,
-        lyricist: null
-      })
+      buildMusicMetaLine(
+        {
+          title: "Song",
+          composer: "Composer",
+          arranger: null,
+          lyricist: null
+        },
+        creditLabels
+      )
     ).toBe("Composer: Composer");
   });
 
   it("skips placeholder dash credits", () => {
     expect(
-      buildMusicMetaLine({ title: "Song", composer: "EasyPop", arranger: "-", lyricist: "EasyPop" })
+      buildMusicMetaLine(
+        { title: "Song", composer: "EasyPop", arranger: "-", lyricist: "EasyPop" },
+        creditLabels
+      )
     ).toBe("Composer: EasyPop · Lyricist: EasyPop");
   });
 

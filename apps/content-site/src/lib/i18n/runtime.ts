@@ -66,7 +66,16 @@ export type ContentSiteServerMessageKey =
   | "failedToLoadMusicData"
   | "invalidVirtualLiveId"
   | "virtualLiveUnavailableInCurrentRegion"
-  | "failedToLoadVirtualLiveData";
+  | "failedToLoadVirtualLiveData"
+  | "discordEmbedOpen"
+  | "discordEmbedTrained"
+  | "discordEmbedComposer"
+  | "discordEmbedArranger"
+  | "discordEmbedLyricist"
+  | "discordEmbedFeaturing"
+  | "discordEmbedTitleCards"
+  | "discordEmbedTitleMusic"
+  | "discordEmbedTitleEvents";
 
 const DEFAULT_SEKAI_I18N_BASE_URL = "https://sekai-world.github.io/sekai-i18n-reborn";
 export const SERVER_I18N_BUNDLE_TIMEOUT_MS = 2_500;

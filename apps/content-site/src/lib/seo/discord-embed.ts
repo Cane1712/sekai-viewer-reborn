@@ -227,10 +227,11 @@ type ComponentPayloadInput = {
   description: string | null;
   imageUrl: string;
   canonicalUrl: string;
+  openLabel: string;
 };
 
 const buildComponentObject = (input: ComponentPayloadInput): Record<string, unknown> => {
-  const linkText = sanitizeLinkText(input.title) || "Open";
+  const linkText = sanitizeLinkText(input.title) || input.openLabel;
   const headingLines = [`# [${linkText}](${input.canonicalUrl})`];
   if (input.metaLine) {
     headingLines.push(input.metaLine);
@@ -253,7 +254,7 @@ const buildComponentObject = (input: ComponentPayloadInput): Record<string, unkn
 
   components.push({
     type: 1,
-    components: [{ type: 2, style: 5, label: "Open", url: input.canonicalUrl }]
+    components: [{ type: 2, style: 5, label: input.openLabel, url: input.canonicalUrl }]
   });
 
   return {
@@ -281,6 +282,8 @@ export type BuildDiscordEmbedSeoInput = {
   description?: string | null;
   imageUrl?: string | null;
   canonicalUrl: string | null;
+  /** Localized label for the "open page" link button. */
+  openLabel: string;
   /**
    * Emit Discord's component-embed JSON. Only Discord understands it; other
    * crawlers get the OpenGraph tags alone. Defaults to true.
@@ -324,7 +327,8 @@ export const buildDiscordEmbedSeo = (input: BuildDiscordEmbedSeoInput): DiscordE
         metaLine: metaLine || null,
         description: description || null,
         imageUrl,
-        canonicalUrl
+        canonicalUrl,
+        openLabel: input.openLabel
       });
       componentRaw = serializeComponentJson(candidate);
       if (componentRaw) {
@@ -406,7 +410,11 @@ export type CardEmbedSource = {
   flavorText?: string | null;
 };
 
-export const buildCardMetaLine = (card: CardEmbedSource, trained: boolean): string => {
+export const buildCardMetaLine = (
+  card: CardEmbedSource,
+  trained: boolean,
+  trainedLabel: string
+): string => {
   const parts: string[] = [];
   const rarity = formatRarity(card.rarityType);
   if (rarity) {
@@ -420,7 +428,7 @@ export const buildCardMetaLine = (card: CardEmbedSource, trained: boolean): stri
     parts.push(characterName);
   }
   if (trained) {
-    parts.push("Trained");
+    parts.push(trainedLabel);
   }
 
   return parts.join(" · ");
@@ -448,15 +456,21 @@ export type MusicEmbedSource = {
   creatorName?: string | null;
 };
 
-export const buildMusicMetaLine = (music: MusicEmbedSource): string => {
+export type MusicCreditLabels = {
+  composer: string;
+  arranger: string;
+  lyricist: string;
+};
+
+export const buildMusicMetaLine = (music: MusicEmbedSource, labels: MusicCreditLabels): string => {
   const credit = (role: string, value: string | null | undefined): string | null => {
     const name = value?.trim() ?? "";
     return name && !isPlaceholderText(name) ? `${role}: ${name}` : null;
   };
   const credits = [
-    credit("Composer", music.composer),
-    credit("Arranger", music.arranger),
-    credit("Lyricist", music.lyricist)
+    credit(labels.composer, music.composer),
+    credit(labels.arranger, music.arranger),
+    credit(labels.lyricist, music.lyricist)
   ].filter((entry): entry is string => entry !== null);
 
   return credits.join(" · ");

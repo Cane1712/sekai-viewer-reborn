@@ -21,6 +21,7 @@ import {
   parseCardRelatedEvents
 } from "$lib/server/card-detail";
 import { getMasterApiBaseUrl } from "$lib/server/config";
+import { loadDiscordEmbedLabels } from "$lib/server/discord-embed-labels";
 import { fetchUnitProfiles, toUnitProfileMap } from "$lib/server/unit-profiles";
 import { getCardFullAssetURL } from "$lib/assets/index";
 import { createPageTitle } from "$lib/page-title";
@@ -247,8 +248,9 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   const trained = parseTrainedParam(url?.searchParams.get("trained"));
   let seo: DiscordEmbedSeo | null = null;
   if (isSEOCrawler(request?.headers.get("user-agent")) && cardId && !invalidMessage) {
+    const labelsPromise = loadDiscordEmbedLabels(uiLocale, fetch);
     seo = await resolveSeoWithBudget(async () => {
-      const detail = await detailPromise;
+      const [detail, labels] = await Promise.all([detailPromise, labelsPromise]);
       if (!detail.card) {
         return null;
       }
@@ -270,7 +272,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         }
       };
       return buildDiscordEmbedSeo({
-        pageTitle: createPageTitle(card.title, "Cards"),
+        pageTitle: createPageTitle(card.title, labels.titleCards),
         title: card.title,
         metaLine: buildCardMetaLine(
           {
@@ -281,7 +283,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
             characterGivenName: card.character?.givenName,
             flavorText: card.flavorText
           },
-          trained
+          resolvedTrained,
+          labels.trained
         ),
         description: buildCardDescription({
           title: card.title,
@@ -290,7 +293,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           flavorText: card.flavorText
         }),
         imageUrl: resolveImageUrl(),
-        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, trained),
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, resolvedTrained),
+        openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });

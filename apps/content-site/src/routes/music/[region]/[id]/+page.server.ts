@@ -7,6 +7,7 @@ import { getServerI18nText } from "$lib/i18n/runtime";
 import { regionLabels, supportedRegions, type SupportedRegion } from "$lib/domain/regions";
 import { normalizeRegion, normalizeUiLocale, UI_LOCALE_COOKIE_NAME } from "$lib/i18n/region";
 import { getMasterApiBaseUrl } from "$lib/server/config";
+import { loadDiscordEmbedLabels } from "$lib/server/discord-embed-labels";
 import { parseMusicDetail, type MusicDetail } from "$lib/server/music-detail";
 import { fetchUnitProfiles, toUnitProfileMap } from "$lib/server/unit-profiles";
 import { getMusicJacketAssetURL } from "$lib/assets/index";
@@ -230,8 +231,9 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   // responses from blowing Discord's 10s unfurl window.
   let seo: DiscordEmbedSeo | null = null;
   if (isSEOCrawler(request?.headers.get("user-agent")) && musicId) {
+    const labelsPromise = loadDiscordEmbedLabels(uiLocale, fetch);
     seo = await resolveSeoWithBudget(async () => {
-      const lookup = await currentLookupPromise;
+      const [lookup, labels] = await Promise.all([currentLookupPromise, labelsPromise]);
       if (!lookup.music) {
         return null;
       }
@@ -246,15 +248,18 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         }
       };
       return buildDiscordEmbedSeo({
-        pageTitle: createPageTitle(music.title, "Music"),
+        pageTitle: createPageTitle(music.title, labels.titleMusic),
         title: music.title,
-        metaLine: buildMusicMetaLine({
-          title: music.title,
-          composer: music.composer,
-          arranger: music.arranger,
-          lyricist: music.lyricist,
-          creatorName: music.creatorArtist?.name
-        }),
+        metaLine: buildMusicMetaLine(
+          {
+            title: music.title,
+            composer: music.composer,
+            arranger: music.arranger,
+            lyricist: music.lyricist,
+            creatorName: music.creatorArtist?.name
+          },
+          labels
+        ),
         description: buildMusicDescription({
           title: music.title,
           composer: music.composer,
@@ -264,6 +269,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         }),
         imageUrl: resolveImageUrl(),
         canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
+        openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });

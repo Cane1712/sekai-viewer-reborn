@@ -15,5 +15,14 @@
   "failedToLoadMusicData": "Failed to load music data.",
   "invalidVirtualLiveId": "Invalid virtual live id.",
   "virtualLiveUnavailableInCurrentRegion": "This virtual live is not available in the current region. Switch region using the badges.",
-  "failedToLoadVirtualLiveData": "Failed to load virtual live data."
+  "failedToLoadVirtualLiveData": "Failed to load virtual live data.",
+  "discordEmbedOpen": "Open",
+  "discordEmbedTrained": "Trained",
+  "discordEmbedComposer": "Composer",
+  "discordEmbedArranger": "Arranger",
+  "discordEmbedLyricist": "Lyricist",
+  "discordEmbedFeaturing": "Featuring {title}",
+  "discordEmbedTitleCards": "Cards",
+  "discordEmbedTitleMusic": "Music",
+  "discordEmbedTitleEvents": "Events"
 }
