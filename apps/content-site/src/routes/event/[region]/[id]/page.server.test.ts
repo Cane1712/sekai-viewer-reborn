@@ -35,6 +35,7 @@ vi.mock("$env/dynamic/public", () => ({
 }));
 
 import { load } from "./+page.server";
+import { DISCORD_SEO_BUDGET_MS } from "$lib/seo/discord-embed";
 
 const messages = {
   invalidEventId: "Invalid event id",
@@ -67,7 +68,7 @@ describe("event detail page load", () => {
     getEventsRegionsByIdAvailability.mockResolvedValue({ data: ["jp"] });
     getServerI18nText.mockReset();
     getServerI18nText.mockImplementation((_locale, key) =>
-      Promise.resolve(messages[key as keyof typeof messages])
+      Promise.resolve(messages[key as keyof typeof messages] ?? `t:${key}`)
     );
     getMasterApiBaseUrl.mockReset();
     getMasterApiBaseUrl.mockReturnValue("https://master-api.test");
@@ -333,5 +334,88 @@ describe("event detail page load", () => {
     expect(result.seo?.canonicalUrl).toBe("https://viewer.example/event/jp/1");
     expect(result.seo?.imageUrl).toContain("home/banner");
     expect(result.seo?.inlineScriptHtml).toContain('id="discord:component-embed"');
+  });
+
+  describe("crawler fallback", () => {
+    const DISCORD_UA = "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)";
+
+    type CrawlerResult = EventPageLoadResult & {
+      seo: { inlineScriptHtml: string } | null;
+      availableRegions: Promise<string[]>;
+    };
+
+    const runCrawlerLoad = (id: string, userAgent = DISCORD_UA) => {
+      const pageUrl = new URL(`https://viewer.example/event/jp/${id}`);
+      return load({
+        params: { region: "jp", id },
+        url: pageUrl,
+        request: new Request(pageUrl, { headers: { "user-agent": userAgent } }),
+        cookies: { get: () => undefined },
+        fetch: vi.fn()
+      } as unknown as Parameters<typeof load>[0]) as Promise<CrawlerResult>;
+    };
+
+    const eventResponse = {
+      data: {
+        event: {
+          id: "1",
+          name: "Event title",
+          assetbundleName: "event-1",
+          unitName: "Leo/need",
+          eventType: "marathon"
+        }
+      }
+    };
+
+    it("keeps the invalid-id message for a crawler with an empty id", async () => {
+      const result = await runCrawlerLoad("   ");
+
+      expect(result.seo).toBe(null);
+      await expect(result.eventPayload).resolves.toEqual({
+        event: null,
+        relatedData: null,
+        debugEventJson: null,
+        error: messages.invalidEventId
+      });
+      await expect(result.availableRegions).resolves.toEqual(["jp"]);
+      expect(getEventsByRegionByIdDetail).not.toHaveBeenCalled();
+      expect(getEventsRegionsByIdAvailability).not.toHaveBeenCalled();
+    });
+
+    it("still resolves the real payload when the embed misses its time budget", async () => {
+      vi.useFakeTimers();
+      try {
+        let release: () => void = () => {};
+        const gate = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        getEventsByRegionByIdDetail.mockReturnValue(gate.then(() => eventResponse));
+
+        const pending = runCrawlerLoad("1");
+        await vi.advanceTimersByTimeAsync(DISCORD_SEO_BUDGET_MS + 100);
+        const result = await pending;
+
+        expect(result.seo).toBe(null);
+
+        release();
+        const payload = await result.eventPayload;
+        expect(payload.error).toBe(null);
+        expect(payload.event?.title).toBe("Event title");
+        expect(getEventsByRegionByIdDetail).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("uses the localized open label and omits the component for non-Discord crawlers", async () => {
+      getEventsByRegionByIdDetail.mockResolvedValue(eventResponse);
+
+      const discord = await runCrawlerLoad("1");
+      const twitter = await runCrawlerLoad("1", "Twitterbot/1.0");
+
+      expect(discord.seo?.inlineScriptHtml).toContain("t:discordEmbedOpen");
+      expect(twitter.seo).not.toBe(null);
+      expect(twitter.seo?.inlineScriptHtml).toBe("");
+    });
   });
 });

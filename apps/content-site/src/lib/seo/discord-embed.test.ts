@@ -7,7 +7,9 @@ import {
   buildMusicDescription,
   buildMusicMetaLine,
   DISCORD_COMPONENT_EMBED_JSON_LIMIT_BYTES,
+  isDiscordCrawler,
   isSEOCrawler,
+  resolveEffectiveTrained,
   parseTrainedParam,
   buildCanonicalUrl,
   resolveAbsoluteUrl,
@@ -28,7 +30,16 @@ describe("truncateByBytes", () => {
   });
 });
 
-describe("isDiscordCrawler", () => {
+describe("isSEOCrawler", () => {
+  it.each([
+    "Twitterbot/1.0",
+    "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
+    "TelegramBot (like TwitterBot)",
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php) meta-externalagent/1.1"
+  ])("detects the link-preview crawler %s", (userAgent) => {
+    expect(isSEOCrawler(userAgent)).toBe(true);
+  });
+
   it("detects the Discordbot user agent", () => {
     expect(isSEOCrawler("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)")).toBe(
       true
@@ -40,6 +51,41 @@ describe("isDiscordCrawler", () => {
     expect(isSEOCrawler("Mozilla/5.0 AppleWebKit")).toBe(false);
     expect(isSEOCrawler(null)).toBe(false);
     expect(isSEOCrawler(undefined)).toBe(false);
+    expect(isSEOCrawler("")).toBe(false);
+  });
+});
+
+describe("isDiscordCrawler", () => {
+  it("matches only Discord, case-insensitively", () => {
+    expect(isDiscordCrawler("Mozilla/5.0 (compatible; Discordbot/2.0)")).toBe(true);
+    expect(isDiscordCrawler("DISCORDBOT")).toBe(true);
+    expect(isDiscordCrawler("Twitterbot/1.0")).toBe(false);
+    expect(isDiscordCrawler("Mozilla/5.0 AppleWebKit")).toBe(false);
+    expect(isDiscordCrawler(null)).toBe(false);
+    expect(isDiscordCrawler(undefined)).toBe(false);
+  });
+});
+
+describe("resolveEffectiveTrained", () => {
+  const card = (rarityType: string | null, initialSpecialTrainingStatus: string | null) =>
+    ({ rarityType, initialSpecialTrainingStatus }) as Parameters<typeof resolveEffectiveTrained>[0];
+
+  it.each(["rarity_1", "rarity_2", "rarity_birthday", null])(
+    "never trains a non-trainable card (%s) even when requested",
+    (rarity) => {
+      expect(resolveEffectiveTrained(card(rarity, null), true)).toBe(false);
+      expect(resolveEffectiveTrained(card(rarity, "done"), true)).toBe(false);
+    }
+  );
+
+  it.each(["rarity_3", "rarity_4"])("honors the request for a trainable %s card", (rarity) => {
+    expect(resolveEffectiveTrained(card(rarity, null), true)).toBe(true);
+    expect(resolveEffectiveTrained(card(rarity, null), false)).toBe(false);
+  });
+
+  it("forces trained art for a trained-only card regardless of the request", () => {
+    expect(resolveEffectiveTrained(card("rarity_4", "done"), false)).toBe(true);
+    expect(resolveEffectiveTrained(card("rarity_4", "done"), true)).toBe(true);
   });
 });
 
@@ -79,16 +125,21 @@ describe("buildCanonicalUrl", () => {
     expect(buildCanonicalUrl("ftp://viewer.example", "/card/jp/1", false)).toBe(null);
   });
 
-  it("upgrades tunnel http origins to public https", () => {
-    expect(buildCanonicalUrl("http://name.trycloudflare.com", "/card/jp/1", false)).toBe(
-      "https://name.trycloudflare.com/card/jp/1"
+  it.each(["http://localhost:4101", "http://[::1]:4101", "http://name.trycloudflare.com"])(
+    "keeps the request protocol for %s instead of rewriting it",
+    (origin) => {
+      expect(buildCanonicalUrl(origin, "/card/jp/1", false)).toBe(`${origin}/card/jp/1`);
+    }
+  );
+
+  it("drops any path or query carried on the origin", () => {
+    expect(buildCanonicalUrl("https://viewer.example/ignored?x=1", "/card/jp/1", false)).toBe(
+      "https://viewer.example/card/jp/1"
     );
   });
 
-  it("keeps loopback http origins untouched", () => {
-    expect(buildCanonicalUrl("http://localhost:4101", "/card/jp/1", false)).toBe(
-      "http://localhost:4101/card/jp/1"
-    );
+  it("rejects an unparsable origin", () => {
+    expect(buildCanonicalUrl("https://", "/card/jp/1", false)).toBe(null);
   });
 });
 
@@ -305,10 +356,10 @@ describe("resolveAbsoluteUrl", () => {
     );
   });
 
-  it("upgrades tunnel http origins to public https", () => {
+  it("keeps the request protocol when resolving proxy paths", () => {
     expect(
       resolveAbsoluteUrl("/storage/sekai-jp-assets/card.webp", "http://name.trycloudflare.com")
-    ).toBe("https://name.trycloudflare.com/storage/sekai-jp-assets/card.webp");
+    ).toBe("http://name.trycloudflare.com/storage/sekai-jp-assets/card.webp");
   });
 
   it("returns empty when nothing fetchable can be built", () => {

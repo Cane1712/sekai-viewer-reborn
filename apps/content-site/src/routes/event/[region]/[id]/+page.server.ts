@@ -324,9 +324,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   // browsers keep the streaming path. The budget guard keeps slow upstream
   // responses (the event aggregate can take 20s+) from blowing Discord's
   // 10s unfurl window.
-  const crawler = isSEOCrawler(request?.headers.get("user-agent"));
   let seo: DiscordEmbedSeo | null = null;
-  if (crawler && eventId) {
+  if (isSEOCrawler(request?.headers.get("user-agent")) && eventId) {
     const labelsPromise = loadDiscordEmbedLabels(uiLocale, fetch);
     seo = await resolveSeoWithBudget(async () => {
       const [aggregate, labels] = await Promise.all([aggregatePromise, labelsPromise]);
@@ -362,12 +361,6 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
     });
   }
 
-  // On a crawler SEO miss the upstream aggregate is too slow for Discord's
-  // fetch window, so resolve the streamed payloads immediately instead of
-  // holding the response open for 20s+. Crawlers only read `<head>`; the
-  // in-flight aggregate still serves browsers via their own requests.
-  const crawlerMiss = crawler && !seo;
-
   return {
     eventId,
     region,
@@ -375,35 +368,18 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
     seo,
     eventUnavailableInCurrentRegionMessage,
     failedToLoadEventDataMessage,
-    availableRegions:
-      crawlerMiss || !eventId
-        ? Promise.resolve([region] satisfies SupportedRegion[])
-        : fetchAvailableRegions({
-            baseUrl,
-            eventId,
-            region,
-            aggregatePromise
-          }),
-    eventPayload: crawlerMiss
-      ? Promise.resolve({
-          event: null,
-          relatedData: null,
-          debugEventJson: null,
-          error: failedToLoadEventDataMessage
-        } satisfies EventPayload)
-      : fetchEventPayload({
-          aggregatePromise,
-          invalidEventIdMessage: eventId ? null : invalidEventIdMessage,
-          failedToLoadEventDataMessage
-        }),
-    unitProfiles: crawlerMiss
-      ? Promise.resolve({})
-      : fetchUnitProfiles(baseUrl, region).then(toUnitProfileMap),
-    isCurrentEvent: crawlerMiss
-      ? Promise.resolve(false)
-      : fetchIsCurrentEvent({
-          aggregatePromise,
-          invalidEventIdMessage: eventId ? null : invalidEventIdMessage
-        })
+    availableRegions: eventId
+      ? fetchAvailableRegions({ baseUrl, eventId, region, aggregatePromise })
+      : Promise.resolve([region] satisfies SupportedRegion[]),
+    eventPayload: fetchEventPayload({
+      aggregatePromise,
+      invalidEventIdMessage: eventId ? null : invalidEventIdMessage,
+      failedToLoadEventDataMessage
+    }),
+    unitProfiles: fetchUnitProfiles(baseUrl, region).then(toUnitProfileMap),
+    isCurrentEvent: fetchIsCurrentEvent({
+      aggregatePromise,
+      invalidEventIdMessage: eventId ? null : invalidEventIdMessage
+    })
   };
 };

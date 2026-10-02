@@ -100,7 +100,8 @@ export const truncateByBytes = (value: string, maxBytes: number): string => {
 };
 
 const SOCIAL_CRAWLERS = [
-  "metaexternalagent",
+  "meta-externalagent",
+  "facebookexternalhit",
   "Twitterbot",
   "Slackbot",
   "Slack-ImgProxy",
@@ -170,10 +171,10 @@ export const parseTrainedParam = (value: string | null | undefined): boolean => 
 };
 
 /**
- * Normalize a request origin for public embeds. Dev servers behind a
- * TLS-terminating tunnel/proxy (e.g. Cloudflare quick tunnels) see an
- * internal `http://` origin while the public URL is `https://`; upgrade to
- * https for any non-loopback host so Discord receives fetchable URLs.
+ * Validate a request origin for public embeds. The origin is trusted as
+ * SvelteKit reports it, so deployments behind a TLS-terminating proxy must
+ * configure adapter-node's `ORIGIN` (or `PROTOCOL_HEADER`/`HOST_HEADER`)
+ * rather than relying on a rewrite here.
  */
 const normalizePublicOrigin = (origin: string | null | undefined): string | null => {
   const trimmed = origin?.trim() ?? "";
@@ -182,13 +183,7 @@ const normalizePublicOrigin = (origin: string | null | undefined): string | null
   }
 
   try {
-    const parsed = new URL(trimmed);
-    const hostname = parsed.hostname.toLowerCase();
-    const isLoopback = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
-    if (parsed.protocol === "http:" && !isLoopback) {
-      parsed.protocol = "https:";
-    }
-    return parsed.origin;
+    return new URL(trimmed).origin;
   } catch {
     return null;
   }

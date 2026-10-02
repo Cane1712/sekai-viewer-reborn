@@ -58,7 +58,7 @@ describe("card detail page load", () => {
     getCardsRegionsByIdAvailability.mockResolvedValue({ data: ["jp"] });
     getServerI18nText.mockReset();
     getServerI18nText.mockImplementation((_locale, key) =>
-      Promise.resolve(messages[key as keyof typeof messages])
+      Promise.resolve(messages[key as keyof typeof messages] ?? `t:${key}`)
     );
     getMasterApiBaseUrl.mockReset();
     getMasterApiBaseUrl.mockReturnValue("https://master-api.test");
@@ -180,5 +180,131 @@ describe("card detail page load", () => {
     };
     expect(payload.component.type).toBe(17);
     expect(new TextEncoder().encode(result.seo!.componentJson).length).toBeLessThanOrEqual(3000);
+  });
+
+  describe("crawler embed", () => {
+    const DISCORD_UA = "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)";
+    const TWITTER_UA = "Twitterbot/1.0";
+
+    type EmbedResult = {
+      trained: boolean;
+      seo: {
+        pageTitle: string;
+        metaLine?: string;
+        imageUrl: string;
+        canonicalUrl: string;
+        componentJson: string;
+        inlineScriptHtml: string;
+      } | null;
+    };
+
+    const mockCard = (rarityType: string, initialSpecialTrainingStatus = "not_doing") =>
+      getCardsByRegionByIdDetail.mockResolvedValue({
+        data: {
+          card: {
+            id: "1",
+            prefix: "Card title",
+            assetbundleName: "bundle-1",
+            attr: "cool",
+            initialSpecialTrainingStatus,
+            cardRarity: { cardRarityType: rarityType },
+            character: { firstName: "Hatsune", givenName: "Miku" }
+          }
+        }
+      });
+
+    const runCrawlerLoad = async (userAgent: string, search = ""): Promise<EmbedResult> => {
+      const pageUrl = new URL(`https://viewer.example/card/jp/1${search}`);
+      return (await load({
+        params: { region: "jp", id: "1" },
+        url: pageUrl,
+        request: new Request(pageUrl, { headers: { "user-agent": userAgent } }),
+        cookies: { get: () => undefined },
+        fetch: vi.fn()
+      } as unknown as Parameters<typeof load>[0])) as EmbedResult;
+    };
+
+    const metaLineOf = (result: EmbedResult): string => {
+      const payload = JSON.parse(result.seo!.componentJson) as {
+        component: { components: { type: number; content?: string }[] };
+      };
+      return payload.component.components[0].content ?? "";
+    };
+
+    it.each([
+      {
+        name: "a 1-star card ignores ?trained",
+        rarity: "rarity_1",
+        status: "not_doing",
+        search: "?trained=true",
+        trained: false
+      },
+      {
+        name: "a birthday card ignores ?trained",
+        rarity: "rarity_birthday",
+        status: "not_doing",
+        search: "?trained=true",
+        trained: false
+      },
+      {
+        name: "a 4-star card without ?trained stays normal",
+        rarity: "rarity_4",
+        status: "not_doing",
+        search: "",
+        trained: false
+      },
+      {
+        name: "a 4-star card with ?trained is trained",
+        rarity: "rarity_4",
+        status: "not_doing",
+        search: "?trained=true",
+        trained: true
+      },
+      {
+        name: "a trained-only card is trained without ?trained",
+        rarity: "rarity_4",
+        status: "done",
+        search: "",
+        trained: true
+      }
+    ])("resolves trained art: $name", async ({ rarity, status, search, trained }) => {
+      mockCard(rarity, status);
+
+      const result = await runCrawlerLoad(DISCORD_UA, search);
+
+      expect(result.seo?.imageUrl).toContain(trained ? "card_after_training" : "card_normal");
+      expect(result.seo?.canonicalUrl).toBe(
+        `https://viewer.example/card/jp/1${trained ? "?trained=true" : ""}`
+      );
+      expect(metaLineOf(result).includes("t:discordEmbedTrained")).toBe(trained);
+    });
+
+    it("uses localized labels for the title context and the open button", async () => {
+      mockCard("rarity_4");
+
+      const result = await runCrawlerLoad(DISCORD_UA);
+
+      expect(result.seo?.pageTitle).toContain("t:discordEmbedTitleCards");
+      expect(result.seo?.componentJson).toContain('"label":"t:discordEmbedOpen"');
+    });
+
+    it("gives other link-preview crawlers OG data without the Discord component", async () => {
+      mockCard("rarity_4");
+
+      const result = await runCrawlerLoad(TWITTER_UA);
+
+      expect(result.seo).not.toBe(null);
+      expect(result.seo?.imageUrl).toContain("card_normal");
+      expect(result.seo?.inlineScriptHtml).toBe("");
+      expect(result.seo?.componentJson).toBe("");
+    });
+
+    it("does not build an embed for a normal browser", async () => {
+      mockCard("rarity_4");
+
+      const result = await runCrawlerLoad("Mozilla/5.0 (Windows NT 10.0) Chrome/130.0");
+
+      expect(result.seo).toBe(null);
+    });
   });
 });
