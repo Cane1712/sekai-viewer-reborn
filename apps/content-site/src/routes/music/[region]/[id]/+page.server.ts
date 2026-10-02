@@ -19,7 +19,7 @@ import {
   buildMusicMetaLine,
   isDiscordCrawler,
   isSEOCrawler,
-  resolveAbsoluteUrl,
+  resolveEmbedImageUrl,
   resolveSeoWithBudget,
   type DiscordEmbedSeo
 } from "$lib/seo/discord-embed";
@@ -238,15 +238,6 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         return null;
       }
       const music = lookup.music;
-      const resolveImageUrl = (): string => {
-        try {
-          return music.assetBundleName
-            ? resolveAbsoluteUrl(getMusicJacketAssetURL(music.assetBundleName, region), url?.origin)
-            : "";
-        } catch {
-          return "";
-        }
-      };
       return buildDiscordEmbedSeo({
         pageTitle: createPageTitle(music.title, labels.titleMusic),
         title: music.title,
@@ -267,7 +258,11 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           lyricist: music.lyricist,
           creatorName: music.creatorArtist?.name
         }),
-        imageUrl: resolveImageUrl(),
+        imageUrl: resolveEmbedImageUrl(
+          music.assetBundleName,
+          (name) => getMusicJacketAssetURL(name, region),
+          url?.origin
+        ),
         canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
         openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))

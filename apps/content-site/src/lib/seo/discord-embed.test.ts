@@ -10,6 +10,7 @@ import {
   isDiscordCrawler,
   isSEOCrawler,
   resolveEffectiveTrained,
+  resolveEmbedImageUrl,
   parseTrainedParam,
   buildCanonicalUrl,
   resolveAbsoluteUrl,
@@ -427,5 +428,32 @@ describe("resolveSeoWithBudget", () => {
       throw new Error("upstream failure");
     };
     await expect(resolveSeoWithBudget(failing, 50)).resolves.toBe(null);
+  });
+});
+
+describe("resolveEmbedImageUrl", () => {
+  const build = (name: string) => `https://assets.example.test/${name}/art.webp`;
+
+  it("builds an absolute URL from the asset bundle", () => {
+    expect(resolveEmbedImageUrl("bundle-1", build, "https://viewer.example")).toBe(
+      "https://assets.example.test/bundle-1/art.webp"
+    );
+  });
+
+  it("resolves a relative asset base against the page origin", () => {
+    expect(
+      resolveEmbedImageUrl("bundle-1", (name) => `/storage/${name}.webp`, "https://viewer.example")
+    ).toBe("https://viewer.example/storage/bundle-1.webp");
+  });
+
+  it.each([null, undefined, ""])("returns empty for a missing bundle name (%s)", (name) => {
+    expect(resolveEmbedImageUrl(name, build, "https://viewer.example")).toBe("");
+  });
+
+  it("returns empty instead of throwing when the asset base is not configured", () => {
+    const throwing = () => {
+      throw new Error("PUBLIC_REMOTE_ASSET_BASE_URL is not set");
+    };
+    expect(resolveEmbedImageUrl("bundle-1", throwing, "https://viewer.example")).toBe("");
   });
 });

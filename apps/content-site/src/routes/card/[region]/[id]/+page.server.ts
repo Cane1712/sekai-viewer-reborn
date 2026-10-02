@@ -33,7 +33,7 @@ import {
   isDiscordCrawler,
   isSEOCrawler,
   parseTrainedParam,
-  resolveAbsoluteUrl,
+  resolveEmbedImageUrl,
   resolveSeoWithBudget,
   type DiscordEmbedSeo,
   resolveEffectiveTrained
@@ -257,20 +257,6 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
       const card = detail.card;
       // sometimes what the user wants is not what the user can get so we have to check if card can be trained
       const resolvedTrained = resolveEffectiveTrained(detail.card, trained);
-      // Relative asset bases (dev `/storage` proxy) resolve against the
-      // page origin so Discord can fetch them.
-      const resolveImageUrl = (): string => {
-        try {
-          return card.assetBundleName
-            ? resolveAbsoluteUrl(
-                getCardFullAssetURL(card.assetBundleName, resolvedTrained, region),
-                url?.origin
-              )
-            : "";
-        } catch {
-          return "";
-        }
-      };
       return buildDiscordEmbedSeo({
         pageTitle: createPageTitle(card.title, labels.titleCards),
         title: card.title,
@@ -292,7 +278,11 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           rarityType: card.rarityType,
           flavorText: card.flavorText
         }),
-        imageUrl: resolveImageUrl(),
+        imageUrl: resolveEmbedImageUrl(
+          card.assetBundleName,
+          (name) => getCardFullAssetURL(name, resolvedTrained, region),
+          url?.origin
+        ),
         canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, resolvedTrained),
         openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))

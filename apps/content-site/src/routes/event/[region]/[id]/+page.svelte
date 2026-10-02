@@ -18,6 +18,7 @@
   import { formatUnitFallbackLabel } from "$lib/domain/unit-profile";
   import { getEventTrackerHref } from "$lib/tools-site";
   import { createPageTitle } from "$lib/page-title";
+  import DiscordEmbedHead from "$lib/components/shared/DiscordEmbedHead.svelte";
   import type { PageProps } from "./$types";
 
   type EventAssetTab = "banner" | "title" | "background" | "characters";
@@ -295,21 +296,7 @@
 
 <svelte:head>
   {#if data.seo}
-    <title>{data.seo.pageTitle}</title>
-    <meta property="og:site_name" content="Sekai Viewer" />
-    <meta property="og:title" content={data.seo.title} />
-    {#if data.seo.description}
-      <meta property="og:description" content={data.seo.description} />
-    {/if}
-    {#if data.seo.imageUrl}
-      <meta property="og:image" content={data.seo.imageUrl} />
-    {/if}
-    <meta property="og:url" content={data.seo.canonicalUrl} />
-    <meta property="og:type" content="article" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <!-- Trusted server-built JSON (angle brackets escaped); renders Discord's component embed. -->
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- input is server-built JSON, not user HTML -->
-    {@html data.seo.inlineScriptHtml}
+    <DiscordEmbedHead seo={data.seo} />
   {:else}
     {#await data.eventPayload}
       <title>{createPageTitle(`${eventTitlePrefix} ${data.eventId}`)}</title>

@@ -145,6 +145,27 @@ export const resolveAbsoluteUrl = (
   return `${publicOrigin}${trimmed}`;
 };
 
+/**
+ * Build the embed image URL for an asset bundle. Returns an empty string when
+ * the bundle is missing or the asset base is not configured, so a broken image
+ * never fails the whole preview.
+ */
+export const resolveEmbedImageUrl = (
+  assetBundleName: string | null | undefined,
+  buildAssetUrl: (assetBundleName: string) => string,
+  origin: string | null | undefined
+): string => {
+  if (!assetBundleName) {
+    return "";
+  }
+
+  try {
+    return resolveAbsoluteUrl(buildAssetUrl(assetBundleName), origin);
+  } catch {
+    return "";
+  }
+};
+
 export const resolveEffectiveTrained = (
   card: CardDetail,
   requested: boolean // the ?trained

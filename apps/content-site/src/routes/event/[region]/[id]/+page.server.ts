@@ -25,7 +25,7 @@ import {
   buildEventMetaLine,
   isDiscordCrawler,
   isSEOCrawler,
-  resolveAbsoluteUrl,
+  resolveEmbedImageUrl,
   resolveSeoWithBudget,
   type DiscordEmbedSeo
 } from "$lib/seo/discord-embed";
@@ -333,15 +333,6 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         return null;
       }
       const event = aggregate.event;
-      const resolveImageUrl = (): string => {
-        try {
-          return event.assetBundleName
-            ? resolveAbsoluteUrl(getEventBannerAssetURL(event.assetBundleName, region), url?.origin)
-            : "";
-        } catch {
-          return "";
-        }
-      };
       return buildDiscordEmbedSeo({
         pageTitle: createPageTitle(event.title, labels.titleEvents),
         title: event.title,
@@ -353,7 +344,11 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
         description: aggregate.relatedData?.musics?.[0]?.title
           ? labels.featuring.replace("{title}", aggregate.relatedData.musics[0].title)
           : null,
-        imageUrl: resolveImageUrl(),
+        imageUrl: resolveEmbedImageUrl(
+          event.assetBundleName,
+          (name) => getEventBannerAssetURL(name, region),
+          url?.origin
+        ),
         canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
         openLabel: labels.open,
         includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
