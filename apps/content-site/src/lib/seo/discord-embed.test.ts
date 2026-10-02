@@ -7,7 +7,7 @@ import {
   buildMusicDescription,
   buildMusicMetaLine,
   DISCORD_COMPONENT_EMBED_JSON_LIMIT_BYTES,
-  isDiscordCrawler,
+  isSEOCrawler,
   parseTrainedParam,
   buildCanonicalUrl,
   resolveAbsoluteUrl,
@@ -31,15 +31,15 @@ describe("truncateByBytes", () => {
 describe("isDiscordCrawler", () => {
   it("detects the Discordbot user agent", () => {
     expect(
-      isDiscordCrawler("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)")
+      isSEOCrawler("Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)")
     ).toBe(true);
-    expect(isDiscordCrawler("Discordbot/2.0")).toBe(true);
+    expect(isSEOCrawler("Discordbot/2.0")).toBe(true);
   });
 
   it("rejects browsers and missing values", () => {
-    expect(isDiscordCrawler("Mozilla/5.0 AppleWebKit")).toBe(false);
-    expect(isDiscordCrawler(null)).toBe(false);
-    expect(isDiscordCrawler(undefined)).toBe(false);
+    expect(isSEOCrawler("Mozilla/5.0 AppleWebKit")).toBe(false);
+    expect(isSEOCrawler(null)).toBe(false);
+    expect(isSEOCrawler(undefined)).toBe(false);
   });
 });
 

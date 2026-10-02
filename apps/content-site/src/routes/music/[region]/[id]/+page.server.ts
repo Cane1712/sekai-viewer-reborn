@@ -17,6 +17,7 @@ import {
   buildMusicDescription,
   buildMusicMetaLine,
   isDiscordCrawler,
+  isSEOCrawler,
   resolveAbsoluteUrl,
   resolveSeoWithBudget,
   type DiscordEmbedSeo
@@ -228,7 +229,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   // browsers keep the streaming path. The budget guard keeps slow upstream
   // responses from blowing Discord's 10s unfurl window.
   let seo: DiscordEmbedSeo | null = null;
-  if (isDiscordCrawler(request?.headers.get("user-agent")) && musicId) {
+  if (isSEOCrawler(request?.headers.get("user-agent")) && musicId) {
     seo = await resolveSeoWithBudget(async () => {
       const lookup = await currentLookupPromise;
       if (!lookup.music) {
@@ -262,7 +263,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           creatorName: music.creatorArtist?.name
         }),
         imageUrl: resolveImageUrl(),
-        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false)
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
+        includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });
   }

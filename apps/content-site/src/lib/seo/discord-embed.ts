@@ -11,6 +11,8 @@
 // These helpers are intentionally pure (no $env imports) so they can run in
 // `+page.server.ts` loads and in unit tests.
 
+import type { CardDetail } from "$lib/domain/card-detail";
+
 export const DISCORD_COMPONENT_EMBED_SCRIPT_ID = "discord:component-embed";
 
 // Raw response byte limit for the component-embed JSON document.
@@ -97,10 +99,27 @@ export const truncateByBytes = (value: string, maxBytes: number): string => {
   return result.trim();
 };
 
-/** True when the request comes from Discord's link-preview crawler. */
-export const isDiscordCrawler = (userAgent: string | null | undefined): boolean =>
-  typeof userAgent === "string" && userAgent.toLowerCase().includes("discordbot");
+const SOCIAL_CRAWLERS = [
+  "metaexternalagent",
+  "Twitterbot",
+  "Slackbot",
+  "Slack-ImgProxy",
+  "Discordbot",
+  "TelegramBot",
+  "LinkedInBot",
+  "WhatsApp",
+  "Pinterestbot",
+  "SkypeUriPreview"
+];
+/** True when the request comes from a social media's link-preview crawler. */
+export const isSEOCrawler = (userAgent: string | null | undefined): boolean =>
+  typeof userAgent === "string" &&
+  SOCIAL_CRAWLERS.some((crawler) => userAgent.toLowerCase().includes(crawler.toLowerCase()));
 
+// Only discord should get component embeds.
+
+export const isDiscordCrawler = (userAgent?: string | null): boolean =>
+  typeof userAgent === "string" && userAgent.toLowerCase().includes("discordbot");
 /**
  * Resolve an asset URL to an absolute URL Discord can fetch. Absolute URLs
  * pass through untouched; root-relative URLs (e.g. dev `/storage` proxy
@@ -123,7 +142,19 @@ export const resolveAbsoluteUrl = (
   }
 
   return `${publicOrigin}${trimmed}`;
-}; /**
+};
+
+export const resolveEffectiveTrained = (
+  card: CardDetail,
+  requested: boolean // the ?trained
+): boolean => {
+  const trainable = card.rarityType === "rarity_3" || card.rarityType === "rarity_4";
+  if (!trainable) return false;
+  if (card.initialSpecialTrainingStatus === "done") return true;
+  return requested;
+};
+
+/**
  * Parse the card `?trained` query flag. Presence-based: missing means the
  * normal art; a present flag means trained art unless it explicitly says
  * `0`, `no`, or `false` (so `?trained`, `?trained=1`, `?trained=yes`,
@@ -250,6 +281,11 @@ export type BuildDiscordEmbedSeoInput = {
   description?: string | null;
   imageUrl?: string | null;
   canonicalUrl: string | null;
+  /**
+   * Emit Discord's component-embed JSON. Only Discord understands it; other
+   * crawlers get the OpenGraph tags alone. Defaults to true.
+   */
+  includeComponent?: boolean;
 };
 
 /**
@@ -276,40 +312,44 @@ export const buildDiscordEmbedSeo = (input: BuildDiscordEmbedSeoInput): DiscordE
       )
     : "";
 
-  // Shrink the description until the whole JSON document fits Discord's limit.
-  let componentRaw: string | null = null;
-  let budget = DISCORD_OG_DESCRIPTION_LIMIT_BYTES;
-  while (budget >= 0) {
-    const candidate = buildComponentObject({
-      title,
-      metaLine: metaLine || null,
-      description: description || null,
-      imageUrl,
-      canonicalUrl
-    });
-    componentRaw = serializeComponentJson(candidate);
-    if (componentRaw) {
-      break;
+  let componentJson = "";
+  let inlineScriptHtml = "";
+  if (input.includeComponent ?? true) {
+    // Shrink the description until the whole JSON document fits Discord's limit.
+    let componentRaw: string | null = null;
+    let budget = DISCORD_OG_DESCRIPTION_LIMIT_BYTES;
+    while (budget >= 0) {
+      const candidate = buildComponentObject({
+        title,
+        metaLine: metaLine || null,
+        description: description || null,
+        imageUrl,
+        canonicalUrl
+      });
+      componentRaw = serializeComponentJson(candidate);
+      if (componentRaw) {
+        break;
+      }
+      if (!description) {
+        return null;
+      }
+      budget = Math.floor(budget / 2);
+      description = truncateByBytes(description, budget);
+      if (budget === 0) {
+        description = "";
+      }
     }
-    if (!description) {
+
+    if (!componentRaw) {
       return null;
     }
-    budget = Math.floor(budget / 2);
-    description = truncateByBytes(description, budget);
-    if (budget === 0) {
-      description = "";
-    }
-  }
 
-  if (!componentRaw) {
-    return null;
+    // Encode `<` so a payload value can never close the inline script tag.
+    componentJson = componentRaw.replace(/</g, "\\u003c");
+    inlineScriptHtml =
+      `<script id="${DISCORD_COMPONENT_EMBED_SCRIPT_ID}" type="application/json">` +
+      `${componentJson}</script>`;
   }
-
-  // Encode `<` so a payload value can never close the inline script tag.
-  const componentJson = componentRaw.replace(/</g, "\\u003c");
-  const inlineScriptHtml =
-    `<script id="${DISCORD_COMPONENT_EMBED_SCRIPT_ID}" type="application/json">` +
-    `${componentJson}</script>`;
 
   return {
     pageTitle,

@@ -23,6 +23,7 @@ import {
   buildDiscordEmbedSeo,
   buildEventMetaLine,
   isDiscordCrawler,
+  isSEOCrawler,
   resolveAbsoluteUrl,
   resolveSeoWithBudget,
   type DiscordEmbedSeo
@@ -322,7 +323,7 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   // browsers keep the streaming path. The budget guard keeps slow upstream
   // responses (the event aggregate can take 20s+) from blowing Discord's
   // 10s unfurl window.
-  const crawler = isDiscordCrawler(request?.headers.get("user-agent"));
+  const crawler = isSEOCrawler(request?.headers.get("user-agent"));
   let seo: DiscordEmbedSeo | null = null;
   if (crawler && eventId) {
     seo = await resolveSeoWithBudget(async () => {
@@ -352,7 +353,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           ? `Featuring ${aggregate.relatedData.musics[0].title}`
           : null,
         imageUrl: resolveImageUrl(),
-        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false)
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, false),
+        includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });
   }

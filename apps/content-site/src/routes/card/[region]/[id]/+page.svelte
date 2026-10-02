@@ -36,7 +36,8 @@
 
   let debugDialog: HTMLDialogElement | null = $state(null);
   let displayLocale = $state("");
-  let activeAssetTab = $state<CardAssetTab>("normal");
+  // This one is a $derived because sveltekit reuses the component and the data may change.
+  let activeAssetTab = $derived<CardAssetTab>(data.trained ? "trained" : "normal");
   let homeLabel = $state(getInitialI18nText("home"));
   let cardListTitle = $state(getInitialI18nText("navigation.cards"));
   let pageTitlePrefix = $state(getInitialI18nText("pageTitle.cardPrefix"));

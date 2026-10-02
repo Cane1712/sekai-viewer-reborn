@@ -30,10 +30,12 @@ import {
   buildCanonicalUrl,
   buildDiscordEmbedSeo,
   isDiscordCrawler,
+  isSEOCrawler,
   parseTrainedParam,
   resolveAbsoluteUrl,
   resolveSeoWithBudget,
-  type DiscordEmbedSeo
+  type DiscordEmbedSeo,
+  resolveEffectiveTrained
 } from "$lib/seo/discord-embed";
 import type { PageServerLoad } from "./$types";
 
@@ -244,20 +246,22 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
   // upstream responses from blowing Discord's 10s unfurl window.
   const trained = parseTrainedParam(url?.searchParams.get("trained"));
   let seo: DiscordEmbedSeo | null = null;
-  if (isDiscordCrawler(request?.headers.get("user-agent")) && cardId && !invalidMessage) {
+  if (isSEOCrawler(request?.headers.get("user-agent")) && cardId && !invalidMessage) {
     seo = await resolveSeoWithBudget(async () => {
       const detail = await detailPromise;
       if (!detail.card) {
         return null;
       }
       const card = detail.card;
+      // sometimes what the user wants is not what the user can get so we have to check if card can be trained
+      const resolvedTrained = resolveEffectiveTrained(detail.card, trained);
       // Relative asset bases (dev `/storage` proxy) resolve against the
       // page origin so Discord can fetch them.
       const resolveImageUrl = (): string => {
         try {
           return card.assetBundleName
             ? resolveAbsoluteUrl(
-                getCardFullAssetURL(card.assetBundleName, trained, region),
+                getCardFullAssetURL(card.assetBundleName, resolvedTrained, region),
                 url?.origin
               )
             : "";
@@ -286,7 +290,8 @@ export const load: PageServerLoad = async ({ params, url, request, cookies, fetc
           flavorText: card.flavorText
         }),
         imageUrl: resolveImageUrl(),
-        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, trained)
+        canonicalUrl: buildCanonicalUrl(url?.origin, url?.pathname, trained),
+        includeComponent: isDiscordCrawler(request?.headers.get("user-agent"))
       });
     });
   }
