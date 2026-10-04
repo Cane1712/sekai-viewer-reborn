@@ -1,0 +1,13 @@
+diff --git a/index.js b/index.js
+index 3d0c3753e35af211fa996b83bd5f6638d89c64df..175f9f9092ff60ba7d0636ec7a19d39800492baf 100644
+--- a/index.js
++++ b/index.js
+@@ -122,0 +123,8 @@ export default function (opts = {}) {
++					if (
++						id === `${server}/chunks/env.js` ||
++						id === `${server}/chunks/EventDebugDialog.js` ||
++						id === `${server}/chunks/howler.js`
++					) {
++						return undefined;
++					}
++

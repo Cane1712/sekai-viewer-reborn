@@ -19,3 +19,4 @@ overrides:
   "@hey-api/json-schema-ref-parser>js-yaml": ">=4.2.0 <6.0.0"
 patchedDependencies:
   "@sekai-world/pixi-live2d-display-mulmotion@0.5.1": patches/@sekai-world__pixi-live2d-display-mulmotion@0.5.1.patch
+  "@sveltejs/adapter-node@5.5.7": patches/@sveltejs__adapter-node@5.5.7.patch
