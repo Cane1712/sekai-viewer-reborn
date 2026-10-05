@@ -3,7 +3,7 @@
   "private": true,
   "license": "MIT",
   "version": "0.1.0",
-  "packageManager": "pnpm@12.8.1",
+  "packageManager": "pnpm@12.9.1",
   "scripts": {
     "dev": "turbo dev --parallel",
     "build": "turbo build",
@@ -11,6 +11,7 @@
     "lint": "turbo lint",
     "check": "turbo check",
     "sync:apps": "pnpm --filter '@apps/*' exec svelte-kit sync",
+    "verify:adapter-node-build": "pnpm sync:apps && pnpm --filter @apps/content-site build && pnpm --filter @apps/tools-site build && pnpm --filter @apps/media-lab-site build && pnpm --filter @apps/account-site build && node ./scripts/verify-adapter-node-build.mjs",
     "verify:ci": "pnpm format:check && pnpm test && pnpm lint && pnpm check && pnpm i18n:check && pnpm build",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
@@ -45,7 +46,7 @@
     "turbo": "^2.9.16",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.60.1",
-    "vite": "8.3.1",
+    "vite": "8.3.2",
     "vitest": "^5.0.0"
   }
 }
