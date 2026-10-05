@@ -284,9 +284,11 @@ const buildComponentObject = (input: ComponentPayloadInput): Record<string, unkn
 };
 
 const serializeComponentJson = (payload: Record<string, unknown>): string | null => {
-  const raw = JSON.stringify(payload);
-  if (utf8ByteLength(raw) <= DISCORD_COMPONENT_EMBED_JSON_LIMIT_BYTES) {
-    return raw;
+  // Encode `<` so a payload value can never close the inline script tag. Measure
+  // the escaped form: each `<` becomes a six-byte `<` that Discord counts.
+  const escaped = JSON.stringify(payload).replace(/</g, "\\u003c");
+  if (utf8ByteLength(escaped) <= DISCORD_COMPONENT_EMBED_JSON_LIMIT_BYTES) {
+    return escaped;
   }
 
   return null;
@@ -365,8 +367,7 @@ export const buildDiscordEmbedSeo = (input: BuildDiscordEmbedSeoInput): DiscordE
       return null;
     }
 
-    // Encode `<` so a payload value can never close the inline script tag.
-    componentJson = componentRaw.replace(/</g, "\\u003c");
+    componentJson = componentRaw;
     inlineScriptHtml =
       `<script id="${DISCORD_COMPONENT_EMBED_SCRIPT_ID}" type="application/json">` +
       `${componentJson}</script>`;

@@ -209,6 +209,27 @@ describe("buildDiscordEmbedSeo", () => {
     expect(seo!.componentJson).toContain("\\u003c/script>");
   });
 
+  it("measures the script-escaped JSON against the size limit", () => {
+    // per the fail case, this JSON is 2,996 bytes here; escaping `<` as `<` pushes it to 3,001.
+    const metaLine = `${"x".repeat(2754)}<`;
+    const seo = buildDiscordEmbedSeo({ ...base, metaLine, description: null });
+    // Fixed fields cannot fit once escaped, so the component is rejected.
+    expect(seo).toBe(null);
+  });
+
+  it("shrinks the description so escaped `<` characters still fit", () => {
+    const seo = buildDiscordEmbedSeo({
+      ...base,
+      metaLine: "x".repeat(2300),
+      description: "<".repeat(200)
+    });
+    expect(seo).not.toBe(null);
+    expect(utf8ByteLength(seo!.componentJson)).toBeLessThanOrEqual(
+      DISCORD_COMPONENT_EMBED_JSON_LIMIT_BYTES
+    );
+    expect(seo!.componentJson).not.toContain("<");
+  });
+
   it("strips master-API template placeholders from descriptions", () => {
     const seo = buildDiscordEmbedSeo({ ...base, description: "Score +{{4;v}}%." });
     expect(seo!.description).toBe("Score + %.");
